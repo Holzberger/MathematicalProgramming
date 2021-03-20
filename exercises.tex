@@ -1,0 +1,242 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage{graphicx}
+\usepackage[cm]{fullpage}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multicol}
+\usepackage{hyperref}
+\hypersetup{
+colorlinks=true,% false: boxed links; true: colored links
+linkcolor=blue,% color of internal links (change box color with linkbordercolor)
+citecolor=blue,% color of links to bibliography
+filecolor=blue,% color of file links
+urlcolor=blue % color of external links
+}
+
+% commands for setting up the page
+\parindent0mm
+\pagestyle{empty}
+
+\sloppy
+
+% environment for "exercise"
+\newcounter{exc}
+\newenvironment{exercise}[1]%
+{\refstepcounter{exc}\textbf{Exercise \arabic{exc}} \emph{#1}\\}
+{
+
+\hrulefill\medskip}%
+\renewcommand{\labelenumi}{(\alph{enumi})}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\vc}[1]{\boldsymbol{#1}}
+
+\begin{document}
+
+%% Header
+\begin{center}
+  {\large \bf Exercises for Mathematical Programming \\
+   \medskip
+    186.835 VU 3.0 -- SS 2021}
+\end{center}
+
+\hrulefill\medskip
+
+Upload your solutions in TUWEL until the following due dates:
+\begin{itemize}
+ \item Exercises \ref{ex:nd1}--\ref{ex:sl}: \textbf{March 24}
+ \item Exercises \ref{ex:cec}--\ref{ex:steinertrees}: \textbf{April 14}
+ \item Exercises \ref{ex:cg-in}--\ref{ex:tu1}: \textbf{May 5}
+ \item Exercises \ref{ex:lag-ufl}--\ref{ex:lag-kp}: \textbf{May 26}
+ \item Exercises \ref{ex:bpack}--\ref{ex:hcstp}: \textbf{June 16}
+\end{itemize}
+
+\textbf{Notes:}
+\begin{itemize}
+ \item Cite used references!
+ \item If you work in a team then submit only one solution and list all participants!
+ \item Do not forget to define and describe all variables and constraints!
+\end{itemize}
+
+\hrulefill\medskip
+
+\begin{exercise}{Network Design (\textbf{1 point})}\label{ex:nd1}
+
+We are given a directed graph $G=(V,A)$ and a value $b_i \in \R$ for each node $i\in V$ which denotes a demand ($b_i < 0$) or a supply ($b_i > 0$), such that $\sum_{i\in V} b_i=0$. 
+There are two types of costs: transportation costs $c_{ij}$ of shipping one unit from node $i$ to node $j$, and building costs of establishing a direct link $(i,j)$ from node $i$ to $j$. 
+A link on arc $(i,j)$ can be built (i) with costs $d_{ij}^1$ and capacity $u_{ij}^1$, or (ii) with costs $d_{ij}^2$ and capacity $u_{ij}^2$. Assume that $d_{ij}^1<d_{ij}^2$ and $u_{ij}^1<u_{ij}^2$ and that at most one option can be chosen on each arc. 
+A network has to be built that satisfies all demands and minimizes the total building and transportation costs. Formulate the problem as a (mixed) integer linear program.
+\end{exercise}
+
+\begin{exercise}{Scheduling (\textbf{1 point})}\label{ex:jss}
+
+A factory consists of $m$ machines $M_1, \dots, M_m$.
+Each job $j=1,\ldots,n$ needs to be processed on each machine in the specific order $M_{j(1)},\dots,M_{j(m)}$ (permutation of the machines). Machine $M_i$ takes time $p_{ij}$ to process job $j$. A machine can only process one job at a time, and once a job is started on any machine, it must be processed to completion. The objective is to minimize the \textbf{sum of the completion times} of all the jobs. The completion time of job $j$ is the time when the last subtask on machine $M_{j(m)}$ is finished. Formulate the problem as a (mixed) integer linear program.
+\end{exercise}
+
+\begin{exercise}{Sports League (\textbf{3 points})}\label{ex:sl}
+
+The season in a sports league with $n$ teams has started. Each team plays against each other team at home and away, so each team plays exactly $2(n-1)$ games. In case of a win a team receives three points, in case of a draw one point, and in case of a loss zero points. After the season the $k$ worst teams with respect to the total number of achieved points get relegated. The task is now to determine the minimum number of points a team has to achieve to have a guarantee that it is not relegated in any season outcome. 
+\begin{itemize}
+ \item Formulate the problem as a (mixed) integer linear program. (\textbf{1 point})
+ \item Solve the problem for $n=18$ and $k=3$ with an MILP solver (e.g., CPLEX, Gurobi, Excel Solver). (\textbf{2 points})
+\end{itemize}
+\end{exercise}
+
+\newpage
+
+\begin{exercise}{Cycle-Elimination Cuts (\textbf{2 points})}\label{ex:cec}
+
+Consider the polyhedra of the following two ILP formulations for the minimum spanning tree problem:
+
+\begin{itemize}
+\item cycle elimination formulation (CEC)
+\begin{align}
+	\min\ & \sum_{e \in E} w_e x_e \\
+	\text{s.t.} & \sum_{e \in E} x_e = n-1 \\
+		& \sum_{e \in C} x_e \leq |C|-1 & \forall C \subseteq E,\ |C|\ge 2,\ C~\mbox{forms a cycle} \\
+		& x_e \in \{0, 1\} & \forall e \in E
+\end{align}
+
+\item subtour elimination formulation (SUB)
+\begin{align}
+	\min\ & \sum_{e \in E} w_e x_e \\
+	\text{s.t.} & \sum_{e \in E} x_e = n-1 \\
+		& \sum_{e \in E(S)} x_e \leq |S|-1 & \forall S \subseteq V, S \neq \emptyset \\
+		& x_e \in \{0, 1\} & \forall e \in E
+\end{align}
+\end{itemize}
+Prove or disprove:
+\[ P_\mathrm{cec} = P_\mathrm{sub} \]
+
+\end{exercise}
+
+
+\begin{exercise}{(Prize Collecting) Steiner Tree Problem (\textbf{2 points})}\label{ex:steinertrees}
+
+Consider the \emph{Steiner tree problem on a graph (STP)} and the \emph{Prize Collecting Steiner tree problem on a graph (PCSTP)}, which are defined as follows:
+
+\begin{itemize}
+\item STP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$, whose node set is partitioned into terminal nodes $T$ and potential Steiner nodes $S$, i.e. $S\cup T=V$, $S\cap T=\emptyset$. The problem is to find a minimum weight subtree of $G$ that contains all terminal nodes.
+
+\item PCSTP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$, and node profits $p_i\ge 0$, $\forall i\in V$. 
+The problem is to find a subtree $G'=(V',E')$ of $G$ that yields maximum profit, i.e. $\max \sum_{i\in V'} p_i - \sum_{e\in E'} w_e$.
+\end{itemize}
+
+Provide ILP formulations for each problem using \emph{directed cutset constraints}.
+\end{exercise}
+
+
+\begin{exercise}{Chv\'atal-Gomory Cutting Planes (\textbf{1 point})}\label{ex:cg-in}
+
+Consider the set $X=\{(x_1,x_2)\in \Z^2 : -4x_1+6x_2\le 9, 2x_1 + 3x_2\le 10, x_1\ge 0, x_2\ge 0\}$.
+Use the Chv\'atal-Gomory procedure to find a description for $\rm{conv}(X)$.
+\end{exercise}
+
+
+\begin{exercise}{Cover Inequality (\textbf{1 point})}\label{ex:cov-in}
+
+Consider the knapsack set $X=\{\{0,1\}^6 : 12x_1 + 9x_2 + 7x_3 + 5x_4 + 5x_5 + 3x_6\le 14\}$.
+\begin{itemize}
+ \item[(i)] Find a minimum cover $C$ and a corresponding valid cover inequality.
+ \item[(ii)] Find the extended cover inequality for $C$.
+ \item[(iii)] Lift the inequality to obtain a strong valid inequality, i.e., compute all lifting coefficients. 
+\end{itemize}
+\end{exercise}
+
+
+\newpage
+
+\begin{exercise}{Totally Unimodularity (\textbf{2 points})}\label{ex:tu1}
+
+Prove of disprove
+\begin{itemize}
+\item The node-edge incidence matrix of all simple, undirected graphs is totally unimodular. \textbf{(1 point)}
+\\ (The node-edge incidence matrix has one column for each edge $\{i,j\}$ with entries $+1$ in rows $i$ and $j$. A graph is called simple, if it does not contain self-loops ore multiple edges between two nodes.)
+\item The node-arc incidence matrix of all bipartite, directed, simple, graphs is totally unimodular. \textbf{(1 point)}
+\\ (The node-arc incidence matrix has one column for each arc $(i,j)$ with entries $+1$ in row $i$ and $-1$ in row $j$. A directed graph is called simple, if it does not contain self-loops or multiple arcs with the same orientation between two nodes.)
+\end{itemize}
+\end{exercise}
+
+
+\begin{exercise}{Lagrangian Relaxation for Uncapacitated Facility Location (\textbf{1 point})}\label{ex:lag-ufl}
+
+Consider the following formulation for the \emph{Uncapacitated Facility Location Problem} (see \texttt{03\_lagrangian\_relaxation.pdf}, p.7-10, for details):
+\begin{align}
+  \max ~ \sum_{i \in M} \sum_{j \in N} p_{ij} x_{ij} - \sum_{j \in N} f_j y_j & &\\
+  \sum_{j \in N} x_{ij} & = 1 & \forall i \in M \\
+  x_{ij} & \leq y_j & \forall i \in M, j \in N \\
+  x_{ij} & \ge 0 & \forall i \in M, j \in N \\
+  y_j & \in \{0,1\} & \forall j \in N
+\end{align}
+Your task is now to dualize the linking constraints $x_{ij} \le y_j,~ \forall i \in M,~ \forall j \in N$, in the usual Lagrangian way, and answer the following questions:
+\begin{itemize}
+\item From a theoretical point of view, how strong is the best Lagrangian dual bound achievable by this relaxation compared with the optimal LP relaxation value of the original formulation? Can it get weaker, is it always equal, or can it get stronger? Argue your answer!
+\item How easy is it to solve the Lagrangian subproblem(s) in terms of computational complexity? No proofs required, just sketch the idea!
+\end{itemize}
+\end{exercise}
+
+
+\begin{exercise}{Lagrangian Relaxation for Knapsack Problems (\textbf{2 points})}\label{ex:lag-kp}
+
+Consider the 0-1 knapsack problem
+\begin{align}
+ \max ~ 10 y_1 + 4 y_2 + 14 y_3 & \\
+ \label{eq:lag-kp} 3 y_1 + y_2 + 4 y_3 & \le 4 \\
+ y_1,y_2,y_3 & \in \{0,1\}.
+\end{align}
+Dualize the knapsack constraint~\eqref{eq:lag-kp} in the usual Lagrangian way.
+\begin{itemize}
+\item What is the optimal value of the Lagrange multiplier $u$ and the value of the Lagrangian dual $w_{LD}$?
+\item Run the subgradient algorithm using the step size method according to rule (2) (see \texttt{03\_lagrangian\_relaxation.pdf}, p.23) with $u^0 = 0,~ \mu_0 = 1,~ \rho = 0.5$. Does the subgradient algorithm converge to the best value $w_{LD}$? Are the optimal solutions of the Lagrangian subproblems unique?
+\end{itemize}
+\end{exercise}
+
+\newpage
+
+\begin{exercise}{Bin Packing (\textbf{2 points})}\label{ex:bpack}
+
+In the bin packing problem, we are given a set of bins of capacity $W$ and a list of $n$ items of integer sizes $L=\{l_1, \dots, l_n\}$, $0\le l_j\le W$ for $1\le j\le n$. The objective is to assign the items to the bins so that the capacity of the bins is not exceeded and the number of used bins is minimized.
+
+One classic formulation for the bin packing problem is given by \eqref{eq:bp-obj}--\eqref{eq:bp-end}. In \eqref{eq:bp-obj}--\eqref{eq:bp-end}, variables $y_i\in \{0,1\}$, $i=1,\dots, n$, indicate whether or not bin $i$ is used, while variables $x_{ij}\in \{0,1\}$, $i,j=1,\dots, n$, indicate whether or not item $j$ is assigned to bin $i$.
+
+\begin{small}
+\begin{align}
+\min \quad z = & \sum_{i=1}^n y_i \label{eq:bp-obj} \\
+\mbox{s.t.} & \sum_{j=1}^n l_j x_{ij} \le W y_i & i=1,\dots, n \\
+	      & \sum_{i=1}^n x_{ij} = 1 & j=1,\dots, n \\
+	& y_i\in \{0,1\} & i=1\dots, n \\
+	& x_{ij}\in \{0,1\} & i,j=1\dots, n \label{eq:bp-end}
+\end{align}
+\end{small}
+
+\begin{itemize}
+\item Develop a formulation for the bin packing problem that utilizes an exponential (in the number of items) number of variables.
+\item Formally state the pricing subproblem that arises when solving the LP relaxation of your formulation by column generation, as well as a feasible approach for solving it.
+\item Find an instance for which your extended formulation yields a better LP bound than formulation \eqref{eq:bp-obj}--\eqref{eq:bp-end}. (If no such example exists, your extended formulation may be wrong / not reasonable.)
+\item Describe a reasonable branching rule that may be used in a branch-and-price algorithm, as well as its (potential) impact on the pricing subproblem.
+\end{itemize}
+\end{exercise}
+
+
+\begin{exercise}{Hop-constrained STP (\textbf{2 points})}\label{ex:hcstp}
+
+Consider the Hop-constrained Steiner Tree Problem (HCSTP): We are given an undirected graph $G=(V,E)$, a dedicated root node $0\in V$, a set of terminal nodes $T\subset V\setminus \{0\}$, an edge costs $c_e\ge 0$, $\forall e\in E$, and a hop limit $H\in \N$.
+A feasible solution $S$ to the HCSTP is a Steiner tree containing the root node and all terminal nodes (further potential Steiner nodes may be included) which satisfies the hop constraint, i.e., the unique path from $0$ to any terminal $t\in T$ in $S$ may not contain more than $H$ edges. 
+The objective is to identify a feasible solution $S^*=(V^*,E^*)$ yielding minimum total costs, i.e., $\sum_{e\in E^*} c_e$.
+
+\begin{itemize}
+\item Provide a \emph{directed} ILP formulation for the HCSTP using an exponential number of \emph{path variables}. (Don't forget to define and describe the variables that you use). 
+\item Formally state the pricing subproblem. (You first need to describe which dual variables are associated to which of your constraints.)
+\item Give an interpretation of the pricing subproblem. (Which combinatorial optimization problem needs to be solved?). Can we solve pricing subproblem in polynomial time or is it NP-hard? (Hint: You may need to argue on the sign of a subset of your dual variable values.)
+\end{itemize}
+
+\end{exercise}
+
+
+\end{document}

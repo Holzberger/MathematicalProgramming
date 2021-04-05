@@ -236,33 +236,50 @@ relegate if it reaches 58 points.
 
 \end{exercise}
 
-%\newpage
+\newpage
+
+\begin{exercise}{Cycle-Elimination Cuts (\textbf{2 points})}\label{ex:cec}
+
+Consider the polyhedra of the following two ILP formulations for the minimum spanning tree problem:
+
+\begin{itemize}
+\item cycle elimination formulation (CEC)
+\begin{align}
+	\min\ & \sum_{e \in E} w_e x_e \\
+	\text{s.t.} & \sum_{e \in E} x_e = n-1 \\
+		& \sum_{e \in C} x_e \leq |C|-1 & \forall C \subseteq E,\ |C|\ge 2,\ C~\mbox{forms a cycle} \\
+		& x_e \in \{0, 1\} & \forall e \in E
+\end{align}
+
+\item subtour elimination formulation (SUB)
+\begin{align}
+	\min\ & \sum_{e \in E} w_e x_e \\
+	\text{s.t.} & \sum_{e \in E} x_e = n-1 \\
+		& \sum_{e \in E(S)} x_e \leq |S|-1 & \forall S \subseteq V, S \neq \emptyset \\
+		& x_e \in \{0, 1\} & \forall e \in E
+\end{align}
+\end{itemize}
+Prove or disprove:
+\[ P_\mathrm{cec} = P_\mathrm{sub} \]
+
+\textbf{Answer:}
+
+
+\textbf{Lemma:}
+  A graph $G=(V,E)$ with $|V|<|E|$ has a cycle.\\
+  %
+\emph{Proof of lemma:}\\
 %
-%\begin{exercise}{Cycle-Elimination Cuts (\textbf{2 points})}\label{ex:cec}
+  Assume $G$ has minimum degree of $2$ or higher. Choose a longest path in $G$ by $p=(v_0,...,v_n)$. Since $G$ has minimum degree of $2$ or higher $v_0$ has at least degree $2$ or higher and musst therefore be connected to one of the vertices in $p$, otherwhise $p$ is not a longest path. Therefore there is a cycle. If $G$ has minimum degree of $1$ we remove that node and obtain a subgraph $G'$ with $|V'|<|E'|$, which is of degree $2$ or higher and therefore has a cycle. $\blacksquare$
+
+
+\emph{Proof of exercise:}\\
 %
-%Consider the polyhedra of the following two ILP formulations for the minimum spanning tree problem:
-%
-%\begin{itemize}
-%\item cycle elimination formulation (CEC)
-%\begin{align}
-%	\min\ & \sum_{e \in E} w_e x_e \\
-%	\text{s.t.} & \sum_{e \in E} x_e = n-1 \\
-%		& \sum_{e \in C} x_e \leq |C|-1 & \forall C \subseteq E,\ |C|\ge 2,\ C~\mbox{forms a cycle} \\
-%		& x_e \in \{0, 1\} & \forall e \in E
-%\end{align}
-%
-%\item subtour elimination formulation (SUB)
-%\begin{align}
-%	\min\ & \sum_{e \in E} w_e x_e \\
-%	\text{s.t.} & \sum_{e \in E} x_e = n-1 \\
-%		& \sum_{e \in E(S)} x_e \leq |S|-1 & \forall S \subseteq V, S \neq \emptyset \\
-%		& x_e \in \{0, 1\} & \forall e \in E
-%\end{align}
-%\end{itemize}
-%Prove or disprove:
-%\[ P_\mathrm{cec} = P_\mathrm{sub} \]
-%
-%\end{exercise}
+  To show $P_{sub}\subseteq P_{cec}$ we assume $\exists x\in P_{sub}(x\not\in P_{cec})$ for a conradiciton. This implies that there is a cycle $C_1$ for that $x$, not fullfiling the condition $\sum \limits_{e\in C_1} x_e\leq |C_1|-1$ where $C_1\subseteq E$ and $|C_1|\geq 2$. W.l.o.g. let $C_1 =((0,1), ..., (m,0))$ with $|C_1|=m$. Then $\sum\limits_{e\in C_1}x_e =m> |C_1|-1=m-1$. Note that $C_1$ defines a subtour $S_1:=\{ 0,1,...,m\}$ with edges $C_1=E(S_1)$. But then $\sum\limits_{e\in E(S_1)} x_e = m > |S_1| -1 = m-1$ which is a contradiciton to $x\in P_{sub}$.
+
+  Next show $P_{cec} \subseteq P_{sub}$ by assuming that $\exists x \in P_{cec} ( x\not \in P_{sub})$ for a contradicition. Then by assumption the solution $x$ fullfils $\sum\limits_{e\in E(S_1)}> |S_1|-1$ and $ S_1\subseteq V$ , $S_1\not = \emptyset$. This condition implies that if $S_1$ contains $m$ vertices there are at least $m+1$ edges between these vertices. By the lemma above there musst be a cycle $C_1$ in $S_1$, which is a contradiction to the fact that $x\in P_{cec}$. $\blacksquare$
+
+\end{exercise}
 %
 %
 %\begin{exercise}{(Prize Collecting) Steiner Tree Problem (\textbf{2 points})}\label{ex:steinertrees}

@@ -281,20 +281,58 @@ Prove or disprove:
 
 \end{exercise}
 %
-%
-%\begin{exercise}{(Prize Collecting) Steiner Tree Problem (\textbf{2 points})}\label{ex:steinertrees}
-%
-%Consider the \emph{Steiner tree problem on a graph (STP)} and the \emph{Prize Collecting Steiner tree problem on a graph (PCSTP)}, which are defined as follows:
-%
-%\begin{itemize}
-%\item STP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$, whose node set is partitioned into terminal nodes $T$ and potential Steiner nodes $S$, i.e. $S\cup T=V$, $S\cap T=\emptyset$. The problem is to find a minimum weight subtree of $G$ that contains all terminal nodes.
-%
-%\item PCSTP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$, and node profits $p_i\ge 0$, $\forall i\in V$. 
-%The problem is to find a subtree $G'=(V',E')$ of $G$ that yields maximum profit, i.e. $\max \sum_{i\in V'} p_i - \sum_{e\in E'} w_e$.
-%\end{itemize}
-%
-%Provide ILP formulations for each problem using \emph{directed cutset constraints}.
-%\end{exercise}
+
+\begin{exercise}{(Prize Collecting) Steiner Tree Problem (\textbf{2 points})}\label{ex:steinertrees}
+
+Consider the \emph{Steiner tree problem on a graph (STP)} and the \emph{Prize Collecting Steiner tree problem on a graph (PCSTP)}, which are defined as follows:
+
+\begin{itemize}
+\item STP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$, whose node set is partitioned into terminal nodes $T$ and potential Steiner nodes $S$, i.e. $S\cup T=V$, $S\cap T=\emptyset$. The problem is to find a minimum weight subtree of $G$ that contains all terminal nodes.
+
+\item PCSTP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$, and node profits $p_i\ge 0$, $\forall i\in V$. 
+The problem is to find a subtree $G'=(V',E')$ of $G$ that yields maximum profit, i.e. $\max \sum_{i\in V'} p_i - \sum_{e\in E'} w_e$.
+\end{itemize}
+
+Provide ILP formulations for each problem using \emph{directed cutset constraints}.
+
+  \textbf{Answer:}
+
+  \emph{ILP for STP:}
+
+  \begin{align}
+    \label{stp1}
+    \min\sum\limits_{e\in E} w_e x_e  &  \\
+    \label{stp2}
+    \sum\limits_{(i,j)\in\delta^+(S)} y_{ij}\geq 1  &  \quad\forall S\subset V, r\in S, S^c \cup T \neq \emptyset  \\
+    \label{stp3}
+    y_{ij}+y_{ji} = x_e & \quad \forall e=\{i,j\}\in E  \\
+    \label{stp4}
+    y_{ij}, x_e\in \mathbb{B}& \quad \forall  e=\{i,j\}\in E 
+  \end{align}
+
+  We select arcs in the graph by the binary variables $y_{ij}$ that model the arc with tail at vertex $i$ and head at vertex $j$. The arcs $y_{ij},y_{ji}$ correspond to the edge $e=\{i,j\}$ that is modelet by ther binary variable $x_e$ and by constraint (\ref{stp3}) we know that only one arc can be choosen and also that whenever we choose an arc we also choose the corresponding edge. For the directed graph we choose the root as $r\in T$ arbitrarly. Then by the cut-set constrined (\ref{stp2}) we state that every subset $S$ of $V$ that includes the root $r$ musst have an outgoing arc into the comlementary set $S^c$ if the complementary set contains a terminal. 
+
+
+  \emph{ILP for PCSTP:}
+  
+  \begin{align}
+    \label{pcstp1}
+    \max\left( \sum\limits_{i\in V} p_i z_i -\sum\limits_{e\in E} w_e x_e \right) &  \\
+    \label{pcstp2}
+    \sum\limits_{(i,j)\in\delta^+(S)} y_{ij}\geq 1  &  \quad\forall S\subset V, r\in S, S^c \cup T \neq \emptyset  \\
+    \label{pcstp3}
+    \sum_{(i,j)\in A} y_{ji} =z_i & \quad \forall i\in V\setminus \{r\}\\
+    \label{pcstp4}
+    y_{ij}+y_{ji} = x_e & \quad \forall e=\{i,j\}\in E  \\
+    \label{pcstp5}
+    y_{ij}, x_e\in \mathbb{B}& \quad \forall  e=\{i,j\}\in E  \\
+    \label{pcstp6}
+    z_i\in \mathbb{B}& \quad \forall  i\in V  \\
+  \end{align}
+
+The ILP is simillar to the STP. We now introduce the binary variable $z_i$ that is true if we choose a vertex $i$ when constructiong the subgraph $G'$. By that we can easily fomulate the objective function in (\ref{pcstp1}) by summing up the profits of the vertices in $G'$ and substracting the weights of the edges in $E'$. To select vertcies when we have an ingoing edge we use constraint (\ref{pcstp4}), that states that if there exists any ingoing edge into vertex $i$ we musst set $z_i$ true. Further since $z_i$ is binary we can only have one ingoing edge.
+
+\end{exercise}
 %
 %
 %\begin{exercise}{Chv\'atal-Gomory Cutting Planes (\textbf{1 point})}\label{ex:cg-in}

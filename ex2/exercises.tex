@@ -87,157 +87,157 @@ urlcolor=blue % color of external links
 
 %\hrulefill\medskip
 
-\begin{exercise}{Network Design (\textbf{1 point})}\label{ex:nd1}
-
-We are given a directed graph $G=(V,A)$ and a value $b_i \in \R$ for each node $i\in V$ which denotes a demand ($b_i < 0$) or a supply ($b_i > 0$), such that $\sum_{i\in V} b_i=0$. 
-There are two types of costs: transportation costs $c_{ij}$ of shipping one unit from node $i$ to node $j$, and building costs of establishing a direct link $(i,j)$ from node $i$ to $j$. 
-A link on arc $(i,j)$ can be built (i) with costs $d_{ij}^1$ and capacity $u_{ij}^1$, or (ii) with costs $d_{ij}^2$ and capacity $u_{ij}^2$. Assume that $d_{ij}^1<d_{ij}^2$ and $u_{ij}^1<u_{ij}^2$ and that at most one option can be chosen on each arc. 
-A network has to be built that satisfies all demands and minimizes the total building and transportation costs. Formulate the problem as a (mixed) integer linear program. 
-
-\textbf{Answer:}
-  Assume we model flow  from node $i$ to node $j$ over an arc of type 1 by the variable $x^1_{ij} \in \mathbb{R}$ and of type $2$ respectively by $x^2_{i,j}\in\mathbb{R}$. Further let $y^1_{ij}, y^2_{ij}\in\{0,1\}$ be boolean variables that express if we have an arc of type 1 or 2 between $(i,j)$ or not. Then the objective function is given by:
-\begin{align}
-  g = \sum\limits_{\substack{i,j \\ (i,j)\in A}}  \sum\limits_{\alpha\in\{1,2\}} \left[x^\alpha_{ij}c_{ij}+d^\alpha_{ij}y^\alpha_{ij}\right]
-\end{align}
-  If we have an arc $(i,j)$ it shall be either type 1 or 2, which we model by the contraint $0\leq y^1_{ij}+y^2_{ij}\leq 1 \quad \forall i,j((i,j)\in A) $. The variables $y^\alpha_{ij}$ and $x^\alpha_{ij}$ are coupled by the constraints $0\leq x^\alpha_{ij}\leq y^\alpha_{ij}u^\alpha_{ij}\quad \forall  i,j((i,j)\in A) \text{ and } \forall \alpha\in\{1,2\}$. This ensures that the flow over a connection of type 1 or 2 is only nonzero if the connection exists and that it will not exeed the capacity of the respective arc. Lastly we ensure that the demand of every node is fullfilled by: $ b_j+\sum\limits_i \sum\limits_\alpha (x_{ij}^\alpha - x^\alpha_{ji}) \geq 0\quad \forall j\in V$, which states that the sum of outflows and inflows at node $j$ musst satisfy the demand.
-Therefore, we get the following MILP:
-\begin{align}
-  &  \text{find } x_{ij}^\alpha\in\mathbb{R} \text{ and } y_{ij}^\alpha \in\{0,1\}\quad\forall i,j((i,j)\in A) \text{ and } \forall \alpha\in\{1,2\}:\\
-  & \min \sum\limits_{\substack{i,j \\ (i,j)\in A}}  \sum\limits_{\alpha\in\{1,2\}} \left[x^\alpha_{ij}c_{ij}+d^\alpha_{ij}y^\alpha_{ij}\right] \\
-  & 0\leq y^1_{ij}+y^2_{ij} \leq 1 \quad \forall i,j((i,j)\in A) \\
-  & 0\leq x^\alpha_{ij} \leq y^\alpha_{ij}u^\alpha_{ij}\quad \forall i,j((i,j)\in A)\text{ and }\alpha\{1,2\}\\
-  & b_j+\sum\limits_{i\in V} \sum\limits_{\alpha\in\{1,2\}} (x_{ij}^\alpha - x^\alpha_{ji}) \geq 0 \quad \forall j\in V 
-\end{align}
-
-
-\end{exercise}
-
-\begin{exercise}{Scheduling (\textbf{1 point})}\label{ex:jss}
-
-A factory consists of $m$ machines $M_1, \dots, M_m$.
-Each job $j=1,\ldots,n$ needs to be processed on each machine in the specific order $M_{j(1)},\dots,M_{j(m)}$ (permutation of the machines). Machine $M_i$ takes time $p_{ij}$ to process job $j$. A machine can only process one job at a time, and once a job is started on any machine, it must be processed to completion. The objective is to minimize the \textbf{sum of the completion times} of all the jobs. The completion time of job $j$ is the time when the last subtask on machine $M_{j(m)}$ is finished. Formulate the problem as a (mixed) integer linear program.
-
-  \textbf{Answer:}
-  Let $M,N$ the indexsets of machines and jobs. Assume the variable $x_{kj}\in\mathbb{R}$ defines the start time of a job $j$ on machine $M_k$. Jobs cant overlap on a machine, and we want that the condition $(x_{kj} - x_{ki}\geq p_{ki}) \vee (x_{ki} - x_{kj}\geq p_{kj})$ holds. One can express this condition with aid of a new variable $y_{kji}$, that shall be 1 if job $j$ is starting before $i$ on machine $M_k$ and 0 else, as done in \cite{manne1960job}. Therefore let $y_{kij}\in \mathbb{N}$ and $0\leq y_{kij}\leq 1$. Next define the number $T_{\infty} := \sum_{k,i}p_{ki}\geq \sup_{i,j}|x_{li}-x_{lj}| \quad\forall l\in M$.
-Then we have the conditions:
-\begin{align}
-  (T_\infty+p_{ki})(1-y_{kji}) + (x_{kj} - x_{ki}) & \geq p_{ki} \quad \forall i,j\in N \text{ and } \forall k\in M\label{e21}\\
-(T_\infty+p_{kj})y_{kji} + (x_{ki} - x_{kj}) & \geq p_{kj} \quad \forall i,j\in N \text{ and } \forall k\in M\label{e22}
-\end{align}
-Note that the conditions imply that if $(x_{ki} - x_{kj})>0 $ and (\ref{e21}) holds then $y_{kji}=0$ and on the other side if $(x_{ki} - x_{kj})\leq 0$ and (\ref{e22}) hold then $y_{kji} =1 $, as required. Further, we see that the two conditions ensure that start times can not overlap.
-To ensure that a job $j$ is executed in its right order $M_{j(1)},\dots,M_{j(m)}$ we introduce the variable $z_{hkj}$ that is 1 if the job $j$ needs to be executed on machine $M_h$ before it can be executed on $M_k$ and 0 otherwise. We can precompute the value of $z_{hkj}$ and therefore add the last condition:
-\begin{align}
-  z_{hkj}(x_{hj} + p_{hj}) \leq x_{kj} \quad\forall j \in N \text{ and } \forall k,h\in M
-\end{align}
-  For the objective function we note that the index of the last machine that job $j$ needs to be processed on is given by $M_{j(m)}$ and therefore the objective is : $\sum\limits_{j\in N}(x_{M_{j(m)}j} + p_{M_{j(m)}j})$.
-The full MILP is therefore:
-\begin{align}
-  \text{ find } x_{kj}\in\mathbb{R} \text{ and } y_{kj}\in\{0,1\} \quad & \forall j\in N \text{ and } \forall k\in M:\\
-  \min \sum\limits_{j\in N}( x_{M_{j(m)}j} + p_{M_{j(m)}j}) \\
-  (T_\infty+p_{ki})(1-y_{kji}) + (x_{kj} - x_{ki}) & \geq p_{ki} \quad \forall i,j\in N \text{ and }\forall  k\in M \\
-(T_\infty+p_{kj})y_{kji} + (x_{ki} - x_{kj}) & \geq p_{kj} \quad \forall i,j\in N \text{ and }\forall  k\in M \\
-z_{hkj}(x_{hj} + p_{hj}) & \leq x_{kj} \quad \forall j\in N \text{ and } \forall h,k \in M \\
-x_{kj} & \geq 0 \quad\forall k\in M \text{ and }\forall j\in N \\
-  &  \text{where } z_{hkj}:=
-  \begin{cases}
-    1 \quad \text{if } M_j^{-1}(h)<M_j^{-1}(k)\\
-    0 \quad \text{else}
-  \end{cases}
-\end{align}
-
-\end{exercise}
-\begin{exercise}{Sports League (\textbf{3 points})}\label{ex:sl}
-
-The season in a sports league with $n$ teams has started. Each team plays against each other team at home and away, so each team plays exactly $2(n-1)$ games. In case of a win, a team receives three points, in case of a draw one point, and in case of a loss zero points. After the season the $k$ worst teams with respect to the total number of achieved points get relegated. The task is now to determine the minimum number of points a team has to achieve to have a guarantee that it is not relegated in any season outcome.
-\begin{itemize}
-\item Formulate the problem as a (mixed) integer linear program. (\textbf{1 point})
-\item Solve the problem for $n=18$ and $k=3$ with an MILP solver (e.g., CPLEX, Gurobi, Excel Solver). (\textbf{2 points})
-\end{itemize}
-
-\textbf{Answer:}
-  Let us denote by $N:=\{0,1,...,n-1\}$ the index-set of teams.To model the outcome of the games we create three variables indexed by the games $x^w_{ij}$, $x^d_{ij}$, $x^l_{ij}$ $\in\{0,1\}$ where the first is one is 1 if team $i$ wins against $j$ at home and 0 otherwhide, the second one is 1 if the game is a draw and the third 1 if $i$ looses abd therefore $j$ wins. Note that we only create variables for $i\neq j$ and therefore can model a game at home for team $i$ by the index ij and a game away by ji. A team can either win, loose or have a draw with another team. Therefore, we have the constraint:
-
-\begin{align}
-  x^w_{ij}+ x^d_{ij}+ x^l_{ij} = 1\quad \forall i,j\in N(i \neq j)
-\end{align}
-
-The points of a team can be described by the points earned in home games and away games:
-
-\begin{align}
-p_t = \sum_{j,j\neq t} (3x^w_{tj}+ x^d_{tj} + 3x^l_{jt}+ x^d_{jt})
-\end{align}
-
-Note that for an away game of theam t we have the indices jt such that $x^w_{jt}$ is 1 if j wins but $x^l_{jt}$ if one if t wins, which is the reason we include it above.
-  Next we want to order the points from $t=0$ with the lowest points to $t=n$ that acheaves the highest points. Therefore let $p_t \leq p_{t+1} \quad \forall t\in N\setminus \{n-1\}$. The objective is then to maximize $p_k$ such that we then know that if a team has $k+1$ points it is surely not relegated in any season outcome.
-The MILP taken from \cite{raack2013integer} is therefore:
-
-\begin{align}
-  \text{ find } x_{ij}^w, x_{ij}^d, x_{ij}^l \in \{0,1\} \quad & \forall i,j\in N:\\
-  \max p_k &= \max \left[ \sum_{j,j\neq k} (3x^w_{kj}+ x^d_{kj} + 3x^l_{jk}+ x^d_{jk}) \right]\quad \text{ for } k\in N\\
-  x^w_{ij}+ x^d_{ij}+ x^l_{ij}& = 1 \quad \forall i,j\in N( i \neq j) \\
-  \sum_{j,j\neq t} (3x^w_{tj}+ x^d_{tj} + 3x^l_{jt}+ x^d_{jt})& \leq 
-  \sum_{j,j\neq t+1} (3x^w_{t+1j}+ x^d_{t+1j} + 3x^l_{jt+1}+ x^d_{jt+1}) \quad \forall t\in N\setminus \{n-1\}\\
-\end{align}
-
-We want to solve the the MILP for $n=18$ and $k=3$ by the Python MIP package (\href{https://pypi.org/project/mip/}{link}).
-
-
-\begin{lstlisting}[style = Python]
-import pip
-import numpy as np
-from mip import Model, xsum, maximize, BINARY
-pip.main(['install', 'mip'])
-
-nt = 18
-I  = range(nt) # from 0 to 17
-k  = 2 # maximize for team k, we start at 0!!
-
-m = Model("Sports League")
-
-xw = []
-xd = []
-xl = []
-
-for i in I:
-    xw.append([])
-    xd.append([])
-    xl.append([])
-    for j in I:
-        if i!=j:
-            xw[i].append(m.add_var(var_type=BINARY))
-            xd[i].append(m.add_var(var_type=BINARY))
-            xl[i].append(m.add_var(var_type=BINARY))
-            m += (xw[i][j] + xd[i][j] + xl[i][j]) == 1
-        else:
-            xw[i].append([])
-            xd[i].append([])
-            xl[i].append([])
-
-for t in range(nt-1):
-    m +=    xsum( 3*xl[i][t]   + xd[i][t]   +
-                  3*xw[t][i]   + xd[t][i]  for i in I if i!=t) <=\
-            xsum( 3*xl[i][t+1] + xd[i][t+1] +
-                  3*xw[t+1][i] + xd[t+1][i]  for i in I if i!=(t+1))
-
-m.objective = maximize(xsum( 3*xl[i][k] + xd[i][k] +
-                             3*xw[k][i] + xd[k][i]  for i in I if i!=k))
-m.optimize()
-
-pk = np.sum([3*int(xl[i][k].x) + int(xd[i][k].x) +
-             3*int(xw[k][i].x) + int(xd[k][i].x) for i in I if i!=k])
-
-print("Team k={} has {} points and will still relegate.".format(k,pk)+\
-      "Therefore a team is safe if it has at least {} points".format(pk+1))
-\end{lstlisting}
-The result is that the team 0 and 1 loose all games except when they play against each other they have a draw.
-Therefore, team 0 and 1 have 2 points and all other teams 57 points, including team 2. Therefore, a team will never
-relegate if it reaches 58 points.
-
-
-\end{exercise}
-
-\newpage
-
+%\begin{exercise}{Network Design (\textbf{1 point})}\label{ex:nd1}
+%
+%We are given a directed graph $G=(V,A)$ and a value $b_i \in \R$ for each node $i\in V$ which denotes a demand ($b_i < 0$) or a supply ($b_i > 0$), such that $\sum_{i\in V} b_i=0$. 
+%There are two types of costs: transportation costs $c_{ij}$ of shipping one unit from node $i$ to node $j$, and building costs of establishing a direct link $(i,j)$ from node $i$ to $j$. 
+%A link on arc $(i,j)$ can be built (i) with costs $d_{ij}^1$ and capacity $u_{ij}^1$, or (ii) with costs $d_{ij}^2$ and capacity $u_{ij}^2$. Assume that $d_{ij}^1<d_{ij}^2$ and $u_{ij}^1<u_{ij}^2$ and that at most one option can be chosen on each arc. 
+%A network has to be built that satisfies all demands and minimizes the total building and transportation costs. Formulate the problem as a (mixed) integer linear program. 
+%
+%\textbf{Answer:}
+%  Assume we model flow  from node $i$ to node $j$ over an arc of type 1 by the variable $x^1_{ij} \in \mathbb{R}$ and of type $2$ respectively by $x^2_{i,j}\in\mathbb{R}$. Further let $y^1_{ij}, y^2_{ij}\in\{0,1\}$ be boolean variables that express if we have an arc of type 1 or 2 between $(i,j)$ or not. Then the objective function is given by:
+%\begin{align}
+%  g = \sum\limits_{\substack{i,j \\ (i,j)\in A}}  \sum\limits_{\alpha\in\{1,2\}} \left[x^\alpha_{ij}c_{ij}+d^\alpha_{ij}y^\alpha_{ij}\right]
+%\end{align}
+%  If we have an arc $(i,j)$ it shall be either type 1 or 2, which we model by the contraint $0\leq y^1_{ij}+y^2_{ij}\leq 1 \quad \forall i,j((i,j)\in A) $. The variables $y^\alpha_{ij}$ and $x^\alpha_{ij}$ are coupled by the constraints $0\leq x^\alpha_{ij}\leq y^\alpha_{ij}u^\alpha_{ij}\quad \forall  i,j((i,j)\in A) \text{ and } \forall \alpha\in\{1,2\}$. This ensures that the flow over a connection of type 1 or 2 is only nonzero if the connection exists and that it will not exeed the capacity of the respective arc. Lastly we ensure that the demand of every node is fullfilled by: $ b_j+\sum\limits_i \sum\limits_\alpha (x_{ij}^\alpha - x^\alpha_{ji}) \geq 0\quad \forall j\in V$, which states that the sum of outflows and inflows at node $j$ musst satisfy the demand.
+%Therefore, we get the following MILP:
+%\begin{align}
+%  &  \text{find } x_{ij}^\alpha\in\mathbb{R} \text{ and } y_{ij}^\alpha \in\{0,1\}\quad\forall i,j((i,j)\in A) \text{ and } \forall \alpha\in\{1,2\}:\\
+%  & \min \sum\limits_{\substack{i,j \\ (i,j)\in A}}  \sum\limits_{\alpha\in\{1,2\}} \left[x^\alpha_{ij}c_{ij}+d^\alpha_{ij}y^\alpha_{ij}\right] \\
+%  & 0\leq y^1_{ij}+y^2_{ij} \leq 1 \quad \forall i,j((i,j)\in A) \\
+%  & 0\leq x^\alpha_{ij} \leq y^\alpha_{ij}u^\alpha_{ij}\quad \forall i,j((i,j)\in A)\text{ and }\alpha\{1,2\}\\
+%  & b_j+\sum\limits_{i\in V} \sum\limits_{\alpha\in\{1,2\}} (x_{ij}^\alpha - x^\alpha_{ji}) \geq 0 \quad \forall j\in V 
+%\end{align}
+%
+%
+%\end{exercise}
+%
+%\begin{exercise}{Scheduling (\textbf{1 point})}\label{ex:jss}
+%
+%A factory consists of $m$ machines $M_1, \dots, M_m$.
+%Each job $j=1,\ldots,n$ needs to be processed on each machine in the specific order $M_{j(1)},\dots,M_{j(m)}$ (permutation of the machines). Machine $M_i$ takes time $p_{ij}$ to process job $j$. A machine can only process one job at a time, and once a job is started on any machine, it must be processed to completion. The objective is to minimize the \textbf{sum of the completion times} of all the jobs. The completion time of job $j$ is the time when the last subtask on machine $M_{j(m)}$ is finished. Formulate the problem as a (mixed) integer linear program.
+%
+%  \textbf{Answer:}
+%  Let $M,N$ the indexsets of machines and jobs. Assume the variable $x_{kj}\in\mathbb{R}$ defines the start time of a job $j$ on machine $M_k$. Jobs cant overlap on a machine, and we want that the condition $(x_{kj} - x_{ki}\geq p_{ki}) \vee (x_{ki} - x_{kj}\geq p_{kj})$ holds. One can express this condition with aid of a new variable $y_{kji}$, that shall be 1 if job $j$ is starting before $i$ on machine $M_k$ and 0 else, as done in \cite{manne1960job}. Therefore let $y_{kij}\in \mathbb{N}$ and $0\leq y_{kij}\leq 1$. Next define the number $T_{\infty} := \sum_{k,i}p_{ki}\geq \sup_{i,j}|x_{li}-x_{lj}| \quad\forall l\in M$.
+%Then we have the conditions:
+%\begin{align}
+%  (T_\infty+p_{ki})(1-y_{kji}) + (x_{kj} - x_{ki}) & \geq p_{ki} \quad \forall i,j\in N \text{ and } \forall k\in M\label{e21}\\
+%(T_\infty+p_{kj})y_{kji} + (x_{ki} - x_{kj}) & \geq p_{kj} \quad \forall i,j\in N \text{ and } \forall k\in M\label{e22}
+%\end{align}
+%Note that the conditions imply that if $(x_{ki} - x_{kj})>0 $ and (\ref{e21}) holds then $y_{kji}=0$ and on the other side if $(x_{ki} - x_{kj})\leq 0$ and (\ref{e22}) hold then $y_{kji} =1 $, as required. Further, we see that the two conditions ensure that start times can not overlap.
+%To ensure that a job $j$ is executed in its right order $M_{j(1)},\dots,M_{j(m)}$ we introduce the variable $z_{hkj}$ that is 1 if the job $j$ needs to be executed on machine $M_h$ before it can be executed on $M_k$ and 0 otherwise. We can precompute the value of $z_{hkj}$ and therefore add the last condition:
+%\begin{align}
+%  z_{hkj}(x_{hj} + p_{hj}) \leq x_{kj} \quad\forall j \in N \text{ and } \forall k,h\in M
+%\end{align}
+%  For the objective function we note that the index of the last machine that job $j$ needs to be processed on is given by $M_{j(m)}$ and therefore the objective is : $\sum\limits_{j\in N}(x_{M_{j(m)}j} + p_{M_{j(m)}j})$.
+%The full MILP is therefore:
+%\begin{align}
+%  \text{ find } x_{kj}\in\mathbb{R} \text{ and } y_{kj}\in\{0,1\} \quad & \forall j\in N \text{ and } \forall k\in M:\\
+%  \min \sum\limits_{j\in N}( x_{M_{j(m)}j} + p_{M_{j(m)}j}) \\
+%  (T_\infty+p_{ki})(1-y_{kji}) + (x_{kj} - x_{ki}) & \geq p_{ki} \quad \forall i,j\in N \text{ and }\forall  k\in M \\
+%(T_\infty+p_{kj})y_{kji} + (x_{ki} - x_{kj}) & \geq p_{kj} \quad \forall i,j\in N \text{ and }\forall  k\in M \\
+%z_{hkj}(x_{hj} + p_{hj}) & \leq x_{kj} \quad \forall j\in N \text{ and } \forall h,k \in M \\
+%x_{kj} & \geq 0 \quad\forall k\in M \text{ and }\forall j\in N \\
+%  &  \text{where } z_{hkj}:=
+%  \begin{cases}
+%    1 \quad \text{if } M_j^{-1}(h)<M_j^{-1}(k)\\
+%    0 \quad \text{else}
+%  \end{cases}
+%\end{align}
+%
+%\end{exercise}
+%\begin{exercise}{Sports League (\textbf{3 points})}\label{ex:sl}
+%
+%The season in a sports league with $n$ teams has started. Each team plays against each other team at home and away, so each team plays exactly $2(n-1)$ games. In case of a win, a team receives three points, in case of a draw one point, and in case of a loss zero points. After the season the $k$ worst teams with respect to the total number of achieved points get relegated. The task is now to determine the minimum number of points a team has to achieve to have a guarantee that it is not relegated in any season outcome.
+%\begin{itemize}
+%\item Formulate the problem as a (mixed) integer linear program. (\textbf{1 point})
+%\item Solve the problem for $n=18$ and $k=3$ with an MILP solver (e.g., CPLEX, Gurobi, Excel Solver). (\textbf{2 points})
+%\end{itemize}
+%
+%\textbf{Answer:}
+%  Let us denote by $N:=\{0,1,...,n-1\}$ the index-set of teams.To model the outcome of the games we create three variables indexed by the games $x^w_{ij}$, $x^d_{ij}$, $x^l_{ij}$ $\in\{0,1\}$ where the first is one is 1 if team $i$ wins against $j$ at home and 0 otherwhide, the second one is 1 if the game is a draw and the third 1 if $i$ looses abd therefore $j$ wins. Note that we only create variables for $i\neq j$ and therefore can model a game at home for team $i$ by the index ij and a game away by ji. A team can either win, loose or have a draw with another team. Therefore, we have the constraint:
+%
+%\begin{align}
+%  x^w_{ij}+ x^d_{ij}+ x^l_{ij} = 1\quad \forall i,j\in N(i \neq j)
+%\end{align}
+%
+%The points of a team can be described by the points earned in home games and away games:
+%
+%\begin{align}
+%p_t = \sum_{j,j\neq t} (3x^w_{tj}+ x^d_{tj} + 3x^l_{jt}+ x^d_{jt})
+%\end{align}
+%
+%Note that for an away game of theam t we have the indices jt such that $x^w_{jt}$ is 1 if j wins but $x^l_{jt}$ if one if t wins, which is the reason we include it above.
+%  Next we want to order the points from $t=0$ with the lowest points to $t=n$ that acheaves the highest points. Therefore let $p_t \leq p_{t+1} \quad \forall t\in N\setminus \{n-1\}$. The objective is then to maximize $p_k$ such that we then know that if a team has $k+1$ points it is surely not relegated in any season outcome.
+%The MILP taken from \cite{raack2013integer} is therefore:
+%
+%\begin{align}
+%  \text{ find } x_{ij}^w, x_{ij}^d, x_{ij}^l \in \{0,1\} \quad & \forall i,j\in N:\\
+%  \max p_k &= \max \left[ \sum_{j,j\neq k} (3x^w_{kj}+ x^d_{kj} + 3x^l_{jk}+ x^d_{jk}) \right]\quad \text{ for } k\in N\\
+%  x^w_{ij}+ x^d_{ij}+ x^l_{ij}& = 1 \quad \forall i,j\in N( i \neq j) \\
+%  \sum_{j,j\neq t} (3x^w_{tj}+ x^d_{tj} + 3x^l_{jt}+ x^d_{jt})& \leq 
+%  \sum_{j,j\neq t+1} (3x^w_{t+1j}+ x^d_{t+1j} + 3x^l_{jt+1}+ x^d_{jt+1}) \quad \forall t\in N\setminus \{n-1\}\\
+%\end{align}
+%
+%We want to solve the the MILP for $n=18$ and $k=3$ by the Python MIP package (\href{https://pypi.org/project/mip/}{link}).
+%
+%
+%\begin{lstlisting}[style = Python]
+%import pip
+%import numpy as np
+%from mip import Model, xsum, maximize, BINARY
+%pip.main(['install', 'mip'])
+%
+%nt = 18
+%I  = range(nt) # from 0 to 17
+%k  = 2 # maximize for team k, we start at 0!!
+%
+%m = Model("Sports League")
+%
+%xw = []
+%xd = []
+%xl = []
+%
+%for i in I:
+%    xw.append([])
+%    xd.append([])
+%    xl.append([])
+%    for j in I:
+%        if i!=j:
+%            xw[i].append(m.add_var(var_type=BINARY))
+%            xd[i].append(m.add_var(var_type=BINARY))
+%            xl[i].append(m.add_var(var_type=BINARY))
+%            m += (xw[i][j] + xd[i][j] + xl[i][j]) == 1
+%        else:
+%            xw[i].append([])
+%            xd[i].append([])
+%            xl[i].append([])
+%
+%for t in range(nt-1):
+%    m +=    xsum( 3*xl[i][t]   + xd[i][t]   +
+%                  3*xw[t][i]   + xd[t][i]  for i in I if i!=t) <=\
+%            xsum( 3*xl[i][t+1] + xd[i][t+1] +
+%                  3*xw[t+1][i] + xd[t+1][i]  for i in I if i!=(t+1))
+%
+%m.objective = maximize(xsum( 3*xl[i][k] + xd[i][k] +
+%                             3*xw[k][i] + xd[k][i]  for i in I if i!=k))
+%m.optimize()
+%
+%pk = np.sum([3*int(xl[i][k].x) + int(xd[i][k].x) +
+%             3*int(xw[k][i].x) + int(xd[k][i].x) for i in I if i!=k])
+%
+%print("Team k={} has {} points and will still relegate.".format(k,pk)+\
+%      "Therefore a team is safe if it has at least {} points".format(pk+1))
+%\end{lstlisting}
+%The result is that the team 0 and 1 loose all games except when they play against each other they have a draw.
+%Therefore, team 0 and 1 have 2 points and all other teams 57 points, including team 2. Therefore, a team will never
+%relegate if it reaches 58 points.
+%
+%
+%\end{exercise}
+%
+%\newpage
+%
 \begin{exercise}{Cycle-Elimination Cuts (\textbf{2 points})}\label{ex:cec}
 
 Consider the polyhedra of the following two ILP formulations for the minimum spanning tree problem:
@@ -262,22 +262,24 @@ Consider the polyhedra of the following two ILP formulations for the minimum spa
 Prove or disprove:
 \[ P_\mathrm{cec} = P_\mathrm{sub} \]
 
-\textbf{Answer:}
-
-
-\textbf{Lemma:}
-  A graph $G=(V,E)$ with $|V|<|E|$ has a cycle.\\
-  %
-\emph{Proof of lemma:}\\
+\textbf{Proposition:}
+$P_\mathrm{cec} = P_\mathrm{sub}$ for $x_e \in \mathbb{Q}\cap[0,1]$.\\
 %
-  Assume $G$ has minimum degree of $2$ or higher. Choose a longest path in $G$ by $p=(v_0,...,v_n)$. Since $G$ has minimum degree of $2$ or higher $v_0$ has at least degree $2$ or higher and musst therefore be connected to one of the vertices in $p$, otherwhise $p$ is not a longest path. Therefore there is a cycle. If $G$ has minimum degree of $1$ we remove that node and obtain a subgraph $G'$ with $|V'|<|E'|$, which is of degree $2$ or higher and therefore has a cycle. $\blacksquare$
-
-
-\emph{Proof of exercise:}\\
+\emph{Proof of the proposition:}\\
 %
-  To show $P_{sub}\subseteq P_{cec}$ we assume $\exists x\in P_{sub}(x\not\in P_{cec})$ for a conradiciton. This implies that there is a cycle $C_1$ for that $x$, not fullfiling the condition $\sum \limits_{e\in C_1} x_e\leq |C_1|-1$ where $C_1\subseteq E$ and $|C_1|\geq 2$. W.l.o.g. let $C_1 =((0,1), ..., (m,0))$ with $|C_1|=m$. Then $\sum\limits_{e\in C_1}x_e =m> |C_1|-1=m-1$. Note that $C_1$ defines a subtour $S_1:=\{ 0,1,...,m\}$ with edges $C_1=E(S_1)$. But then $\sum\limits_{e\in E(S_1)} x_e = m > |S_1| -1 = m-1$ which is a contradiciton to $x\in P_{sub}$.
+The graphs are considered loop free.
+To show $P_{sub}\subseteq P_{cec}$ we assume $\exists x\in P_{sub}(x\not\in P_{cec})$ for a contradiction.
+Therefore, we select an $x$ such that $x\in P_{sub}$ and $x\not\in P_{cec}$. Since $x\in P_{sub}$ we know $\sum\limits_{e \in E} x_e = n-1$ is true, implying together with $x\not\in P_{cec}$ that we must have $\sum\limits_{e\in C_1}x_e> |C_1|-1$ for some cycle $C_1\subseteq E$ and $|C_1|\geq 2$. W.l.o.g. let $C_1 =((0,1), ..., (m,0))$. Note that $C_1$ defines a subtour $S_1:=\{ 0,1,...,m\}$ with edges $C_1\subseteq E(S_1)$ and $|C_1|=|S_1|$ since it is a cycle. Therefore $S_1\neq \emptyset$ and $S_1\subseteq V$ implying since $x\in P_{sub}$ that $\sum\limits_{e\in C_1} x_e \leq \sum\limits_{e\in E(S_1)} x_e \leq |S_1|-1 = |C_1|-1$ which is a contradiction.
 
-  Next show $P_{cec} \subseteq P_{sub}$ by assuming that $\exists x \in P_{cec} ( x\not \in P_{sub})$ for a contradicition. Then by assumption the solution $x$ fullfils $\sum\limits_{e\in E(S_1)}> |S_1|-1$ and $ S_1\subseteq V$ , $S_1\not = \emptyset$. This condition implies that if $S_1$ contains $m$ vertices there are at least $m+1$ edges between these vertices. By the lemma above there musst be a cycle $C_1$ in $S_1$, which is a contradiction to the fact that $x\in P_{cec}$. $\blacksquare$
+Next show $P_{cec} \subseteq P_{sub}$.
+First select an arbitrary $x \in P_{cec}$ which implies $\sum\limits_{e\in C}x_e\leq |C|-1\quad \forall |C|\geq 2 \text{ and } C\subseteq E$.
+
+Consider an arbitrary cycle $C_1$. If we were to remove any edge $t$ from $C_1$ we end up with a path $C_1\setminus \{t\}$ that fulfills $|C_1|-1 = |C_1\setminus \{t\}|$. Therefore if $C_1$ satisfies the CEC $\sum\limits_{e\in C_1}x_e \leq |C_1|-1$ we have $\max\limits_{x_e}\sum\limits_{x_e\in C_1}x_e = |C_1|-1=|C_1\setminus \{t\}|=\max\limits_{x_e}\sum\limits_{x_e\in C_1\setminus \{t\}}x_e$.
+
+Now take an arbitrary subtour $S$.
+Any cycle of $S$ can be replaced by the path that we obtain by removing an edge from the corresponding cycle. By this we obtain a new acyclic graph $\hat{S}$ with $\max\limits_{x_e}\sum\limits_{x_e\in E(S)}x_e = \max\limits_{x_e}\sum\limits_{x_e\in E(\hat{S})}x_e$. In any acyclic graph the numver of vertices is at least one more than the number of edges. Therfore we have $\max\limits_{x_e}\sum\limits_{x_e\in E(\hat{S})}x_e = |E(\hat{S})|\leq |\hat{S}|-1$. Since $|S|=|\hat{S}|$ we further have $\max\limits_{x_e}\sum\limits_{x_e\in E(S)}x_e \leq |S|-1$ which shows that $\sum\limits_{x_e\in E(S)}x_e \leq |S|-1$ and we follow $x\in P_{sub}$. $\blacksquare$
+
+
 
 \end{exercise}
 %
@@ -289,48 +291,48 @@ Consider the \emph{Steiner tree problem on a graph (STP)} and the \emph{Prize Co
 \begin{itemize}
 \item STP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$, whose node set is partitioned into terminal nodes $T$ and potential Steiner nodes $S$, i.e. $S\cup T=V$, $S\cap T=\emptyset$. The problem is to find a minimum weight subtree of $G$ that contains all terminal nodes.
 
-\item PCSTP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$, and node profits $p_i\ge 0$, $\forall i\in V$. 
+\item PCSTP: Given an undirected graph $G=(V,E)$ with edge weights $w_e\ge 0$, $\forall e\in E$ and node profits $p_i\ge 0$, $\forall i\in V$.
 The problem is to find a subtree $G'=(V',E')$ of $G$ that yields maximum profit, i.e. $\max \sum_{i\in V'} p_i - \sum_{e\in E'} w_e$.
 \end{itemize}
 
 Provide ILP formulations for each problem using \emph{directed cutset constraints}.
 
-  \textbf{Answer:}
+\textbf{Answer:}
 
-  \emph{ILP for STP:}
+\emph{ILP for STP:}
 
-  \begin{align}
-    \label{stp1}
-    \min\sum\limits_{e\in E} w_e x_e  &  \\
-    \label{stp2}
-    \sum\limits_{(i,j)\in\delta^+(S)} y_{ij}\geq 1  &  \quad\forall S\subset V, r\in S, S^c \cup T \neq \emptyset  \\
-    \label{stp3}
-    y_{ij}+y_{ji} = x_e & \quad \forall e=\{i,j\}\in E  \\
-    \label{stp4}
-    y_{ij}, x_e\in \mathbb{B}& \quad \forall  e=\{i,j\}\in E 
-  \end{align}
+\begin{align}
+\label{stp1}
+\min\sum\limits_{e\in E} w_e x_e & \\
+\label{stp2}
+\sum\limits_{(i,j)\in\delta^+(S)} y_{ij}\geq 1 & \quad\forall S\subset V, r\in S, S^c \cap T \neq \emptyset \\
+\label{stp3}
+y_{ij}+y_{ji} = x_e & \quad \forall e=\{i,j\}\in E \\
+\label{stp4}
+y_{ij}, x_e\in \mathbb{B}& \quad \forall e=\{i,j\}\in E
+\end{align}
 
-  We select arcs in the graph by the binary variables $y_{ij}$ that model the arc with tail at vertex $i$ and head at vertex $j$. The arcs $y_{ij},y_{ji}$ correspond to the edge $e=\{i,j\}$ that is modelet by ther binary variable $x_e$ and by constraint (\ref{stp3}) we know that only one arc can be choosen and also that whenever we choose an arc we also choose the corresponding edge. For the directed graph we choose the root as $r\in T$ arbitrarly. Then by the cut-set constrined (\ref{stp2}) we state that every subset $S$ of $V$ that includes the root $r$ musst have an outgoing arc into the comlementary set $S^c$ if the complementary set contains a terminal. 
+We select arcs in the graph by the binary variables $y_{ij}$, that model the arc with tail at vertex $i$ and head at vertex $j$. The arcs $y_{ij},y_{ji}$ correspond to the edge $e=\{i,j\}$, that is modeled by their binary variable $x_e$. By constraint (\ref{stp3}) we know that only one arc can be chosen and also that whenever we choose an arc we also choose the corresponding edge. For the directed graph we choose the root as $r\in T$ arbitrarily. Then by the cut-set constrained (\ref{stp2}) we state that every subset $S$ of $V$ that includes the root $r$ must have an outgoing arc into the complementary set $S^c$ if the complementary set contains a terminal.
 
 
-  \emph{ILP for PCSTP:}
-  
-  \begin{align}
-    \label{pcstp1}
-    \max\left( \sum\limits_{i\in V} p_i z_i -\sum\limits_{e\in E} w_e x_e \right) &  \\
-    \label{pcstp2}
-    \sum\limits_{(i,j)\in\delta^+(S)} y_{ij}\geq 1  &  \quad\forall S\subset V, r\in S, S^c \cup T \neq \emptyset  \\
-    \label{pcstp3}
-    \sum_{(i,j)\in A} y_{ji} =z_i & \quad \forall i\in V\setminus \{r\}\\
-    \label{pcstp4}
-    y_{ij}+y_{ji} = x_e & \quad \forall e=\{i,j\}\in E  \\
-    \label{pcstp5}
-    y_{ij}, x_e\in \mathbb{B}& \quad \forall  e=\{i,j\}\in E  \\
-    \label{pcstp6}
-    z_i\in \mathbb{B}& \quad \forall  i\in V  \\
-  \end{align}
+\emph{ILP for PCSTP:}
 
-The ILP is simillar to the STP. We now introduce the binary variable $z_i$ that is true if we choose a vertex $i$ when constructiong the subgraph $G'$. By that we can easily fomulate the objective function in (\ref{pcstp1}) by summing up the profits of the vertices in $G'$ and substracting the weights of the edges in $E'$. To select vertcies when we have an ingoing edge we use constraint (\ref{pcstp4}), that states that if there exists any ingoing edge into vertex $i$ we musst set $z_i$ true. Further since $z_i$ is binary we can only have one ingoing edge.
+\begin{align}
+\label{pcstp1}
+\max\left( \sum\limits_{i\in V} p_i z_i -\sum\limits_{e\in E} w_e x_e \right) & \\
+\label{pcstp2}
+\sum\limits_{(i,j)\in\delta^+(S)} y_{ij}\geq z_k & \quad\forall S\subset V, r\in S, k\in S^c \\
+\label{pcstp3}
+\sum_{(i,j)\in A} y_{ji} =z_i & \quad \forall i\in V\setminus \{r\}\\
+\label{pcstp4}
+y_{ij}+y_{ji} = x_e & \quad \forall e=\{i,j\}\in E \\
+\label{pcstp5}
+y_{ij}, x_e\in \mathbb{B}& \quad \forall e=\{i,j\}\in E \\
+\label{pcstp6}
+z_i\in \mathbb{B}& \quad \forall i\in V \\
+\end{align}
+
+The ILP is similar to the STP. We now introduce the binary variable $z_i$ that is true if we choose a vertex $i$ when constructing the subgraph $G'$. By that we can easily formulate the objective function in (\ref{pcstp1}) by summing up the profits of the vertices in $G'$ and subtracting the weights of the edges in $E'$. To select vertcies when we have an ingoing edge we use constraint (\ref{pcstp4}), that states that if there exists any ingoing edge into vertex $i$ we must set $z_i$ true. Further since $z_i$ is binary we can only have one ingoing edge. The cutset constraint (\ref{pcstp2}) ensures that all selected vertices are connected to the root $r$.
 
 \end{exercise}
 %

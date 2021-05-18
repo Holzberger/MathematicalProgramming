@@ -1,0 +1,86 @@
+	for( u_int i = 0; i <  instance.n_edges; i++ ) {
+		model.add(f[instance.edges[i].v1] + x[i] <= f[instance.edges[i].v2] + k*(1-x[i]) );
+	}
+	
+	IloExpr sum_x( env );
+	for( u_int i = 0; i <  instance.n_edges; i++ ) {
+		sum_x += x[i];
+	}
+	model.add(sum_x == k-1);
+	sum_x.clear();
+	
+	for( u_int i = 0; i <  instance.n_edges; i++ ) {
+		if(instance.edges[i].v1 == 0)
+			sum_x += x[i];
+	}
+	model.add(sum_x == 1);
+	sum_x.clear();
+	
+	for( u_int j = 1; j <  instance.n_nodes; j++ ) { // not root
+		for( u_int ie = 0; ie <  instance.n_edges; ie++ ) {
+			if(instance.edges[ie].v2 == j)
+				sum_x += x[ie];
+		}
+		model.add(sum_x <= 1);
+		sum_x.clear();
+
+
+
+
+
+
+
+		for( u_int i = 0; i <  instance.n_edges; i++ ) {
+			model.add(f[instance.edges[i].v1] + x[i] <= f[instance.edges[i].v2] + k*(1-x[i]) );
+		}
+		
+		for( u_int j = 1; j <  instance.n_nodes; j++ ) {
+			for( u_int ie = 0; ie <  instance.n_edges; ie++ ) {
+				if(instance.edges[ie].v2 == j)
+					edge_expr += x[ie];
+			}
+		model.add(0 <= k*edge_expr - f[j]);
+		edge_expr.clear();
+		}
+
+----------------------------------------------------------------------
+
+
+
+		IloExpr flow_expr( env );
+		IloExpr edge_expr( env );
+		
+		
+		for( u_int i = 0; i <  instance.n_edges; i++ ) {
+		if(instance.edges[i].v1 == 0)
+			edge_expr += x[i];
+		}
+		model.add(edge_expr == 1);
+		edge_expr.clear();
+		
+		for( u_int j = 1; j <  instance.n_nodes; j++ ) {
+			for( u_int i = 0; i <  instance.n_edges; i++ ) {
+				if(instance.edges[i].v2 == j)
+					edge_expr += x[i];
+			}
+		model.add(0 >= k*(1-edge_expr) - f[j]);
+		edge_expr.clear();
+		}
+
+		for( u_int i = 0; i <  instance.n_edges; i++ ) {
+			edge_expr += x[i];
+		}
+		model.add(edge_expr == k);
+		edge_expr.clear();
+		
+		for( u_int i = 0; i <  instance.n_edges; i++ ) {
+		model.add(f[instance.edges[i].v1] + x[i] <= f[instance.edges[i].v2] + k*(1-x[i]) );
+		}
+
+		// root has exactly one outgoing edge
+		for( u_int i = 0; i <  instance.n_edges; i++ ) {
+			if(instance.edges[i].v1==0)
+				sum_x += x[i];
+		}
+		model.add(sum_x == 1);
+		sum_x.clear();

@@ -55,11 +55,15 @@ void kMST_ILP::solve()
 		cout << "Objective value: " << cplex.getObjValue() << "\n";
 		cout << "CPU time: " << Tools::CPUtime() << "\n\n";
 		IloNumArray vals(env);
+		IloNumArray valsf(env);
 		cplex.getValues(vals, x);
+		cplex.getValues(valsf, f);
 		
-		for(u_int i=0; i<instance.n_edges; i++){
+		for(u_int i=0; i<instance.n_edges*2; i+=2){
 			if (abs(vals[i]) > 1e-4)
-				env.out() << i << "("<<instance.edges[i].v1 <<","<< instance.edges[i].v2<<"),";
+				env.out() << i/2 <<"["<<valsf[i]<< "("<<instance.edges[i/2].v1 <<","<< instance.edges[i/2].v2<<"),";
+			if (abs(vals[i+1]) > 1e-4)
+				env.out() << i/2 <<"["<<valsf[i+1]<< "("<< instance.edges[i/2].v2 <<","<< instance.edges[i/2].v1<<"),";
 		}
 		env.out() << "\n";
 		cplex.getValues(vals, f);
@@ -120,47 +124,50 @@ void kMST_ILP::modelSCF()
 		// ++++++++++++++++++++++++++++++++++++++++++
 		// TODO build single commodity flow model
 		// ++++++++++++++++++++++++++++++++++++++++++
-		x = IloBoolVarArray(env, instance.n_edges);
+		x = IloBoolVarArray(env, instance.n_edges*2);
 		z = IloBoolVarArray(env, instance.n_nodes);
-		f = IloIntVarArray(env);
-		f.add(IloIntVarArray(env, instance.n_edges*2, 0, k));
-		
-		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
-			model.add(f[i] <= k*x[i/2]);
-			model.add(f[i+1] <= k*x[i/2]);
-		}
+		f = IloIntVarArray(env, instance.n_edges*2, 0, k);
 		
 		IloExpr objective( env );
-		for( u_int i = 0; i <  instance.n_edges; i++ ) {
-			objective += x[i]*instance.edges[i].weight;
+		IloExpr sum_x( env );
+		IloExpr sum_x1( env );
+		IloExpr sum_f( env );
+		IloExpr sum_f1( env );
+		
+		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
+				objective += (x[i] + x[i+1])*instance.edges[i/2].weight;
 		}
 		model.add(IloMinimize(env, objective));
 		
-		IloExpr sum_x( env );
 		
-		// root has exactly one outgoing edge with flow k
 		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
-			if(instance.edges[i/2].v1==0)
-				model.add(f[i] == k*x[i/2]);
-			if(instance.edges[i/2].v2==0)
-				model.add(f[i+1] == k*x[i/2]);
-			
+			if( instance.edges[i/2].v1==0 ){
+				sum_x  += x[i]; // out of root x0j
+				sum_x1 += x[i+1]; // to root xj0
+				sum_f  += f[i];
+				sum_f1 += f[i+1];
+			}
+			if( instance.edges[i/2].v2==0 ){
+				sum_x  += x[i+1]; // out of root x0j
+				sum_x1 += x[i]; // to root xj0
+				sum_f  += f[i+1]; 
+				sum_f1 += f[i];
+			}
 		}
-
-		
-
-		
-		// send nothing back to root
-		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
-			if(instance.edges[i/2].v1 ==0)
-				sum_x += f[i+1];
-			if(instance.edges[i/2].v2 ==0)
-				sum_x += f[i];
-		}
-		model.add(sum_x == 0);
+		model.add(sum_x == 1);
+		model.add(sum_x1 == 0);
+		model.add(sum_f == k);
+		model.add(sum_f1 == 0);
 		sum_x.clear();
+		sum_x1.clear();
+		sum_f.clear();
+		sum_f1.clear();
 		
-		
+		// select arc whenever there is a flow
+		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
+			model.add(f[i] <= k*x[i]);
+			model.add(f[i+1] <= k*x[i+1]);
+		}
 		
 		IloExpr sum_z( env );
 		
@@ -171,14 +178,7 @@ void kMST_ILP::modelSCF()
 		model.add(sum_z == k+1);
 		sum_z.clear();
 		
-		
-		// select exactly k edges
-		for( u_int i = 0; i <  instance.n_edges; i++ ) {
-			sum_x += x[i];
-		}
-		model.add(sum_x == k);
-		sum_x.clear();
-		
+		// flow continuity
 		for( u_int j = 1; j < instance.n_nodes; j++ ){
 			for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
 				if(instance.edges[i/2].v1 ==j)
@@ -189,8 +189,10 @@ void kMST_ILP::modelSCF()
 			model.add(sum_x == z[j]);
 			sum_x.clear();
 		}
+
 		
-		sum_z.end();
+		sum_f.end();
+		sum_x1.end();
 		sum_x.end();
 		objective.end();
 	}

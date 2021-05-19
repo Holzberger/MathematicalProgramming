@@ -57,16 +57,26 @@ void kMST_ILP::solve()
 		IloNumArray vals(env);
 		IloNumArray valsf(env);
 		cplex.getValues(vals, x);
-		cplex.getValues(valsf, f);
 		
 		for(u_int i=0; i<instance.n_edges*2; i+=2){
 			if (abs(vals[i]) > 1e-4)
-				env.out() << i/2 <<"["<<valsf[i]<< "("<<instance.edges[i/2].v1 <<","<< instance.edges[i/2].v2<<"),";
+				env.out() << i/2 <<"("<<instance.edges[i/2].v1 <<","<< instance.edges[i/2].v2<<"),";
 			if (abs(vals[i+1]) > 1e-4)
-				env.out() << i/2 <<"["<<valsf[i+1]<< "("<< instance.edges[i/2].v2 <<","<< instance.edges[i/2].v1<<"),";
+				env.out() << i/2 <<"("<< instance.edges[i/2].v2 <<","<< instance.edges[i/2].v1<<"),";
 		}
 		env.out() << "\n";
+		
 		cplex.getValues(vals, f);
+		for(u_int j=0; j<instance.n_nodes-1; j++){
+			env.out() <<"\n var"<<j<<":\n";
+			for(u_int i=0; i<instance.n_edges*2; i+=2){
+				if (abs(vals[i+ j*instance.n_edges*2]) > 1e-4)
+					env.out() << i/2 <<"("<<instance.edges[i/2].v1 <<","<< instance.edges[i/2].v2<<") f "<<vals[i+ j*instance.n_edges*2]<<", ";
+				if (abs(vals[i+1 + j*instance.n_edges*2]) > 1e-4)
+					env.out() << i/2 <<"("<< instance.edges[i/2].v2 <<","<< instance.edges[i/2].v1<<") f "<<vals[i+1+ j*instance.n_edges*2]<<", ";
+			}
+		}
+		cplex.getValues(vals, z);
 		env.out() << "Values = " << vals << endl;
 
 	}
@@ -192,8 +202,10 @@ void kMST_ILP::modelSCF()
 
 		
 		sum_f.end();
+		sum_f1.end();
 		sum_x1.end();
 		sum_x.end();
+		sum_z.end();
 		objective.end();
 	}
 	catch( IloException &e ) {
@@ -213,6 +225,91 @@ void kMST_ILP::modelMCF()
 		// ++++++++++++++++++++++++++++++++++++++++++
 		// TODO build multi commodity flow model
 		// ++++++++++++++++++++++++++++++++++++++++++
+		x = IloBoolVarArray(env, instance.n_edges*2);
+		z = IloBoolVarArray(env, instance.n_nodes-1);
+		f = IloIntVarArray(env, instance.n_edges*2*(instance.n_nodes-1), 0, 1);
+		
+		IloExpr objective( env );
+		IloExpr sum_x( env );
+		IloExpr sum_x1( env );
+		IloExpr sum_f( env );
+		IloExpr sum_f1( env );
+		IloExpr sum_z( env );
+		
+		u_int stride = 2*instance.n_edges;
+		
+		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
+				objective += (x[i] + x[i+1])*instance.edges[i/2].weight;
+		}
+		model.add(IloMinimize(env, objective));
+
+		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
+			if( instance.edges[i/2].v1==0 ){
+				sum_x  += x[i]; // out of root x0j
+				sum_x1 += x[i+1]; // to root xj0
+			}
+			if( instance.edges[i/2].v2==0 ){
+				sum_x  += x[i+1]; // out of root x0j
+				sum_x1 += x[i]; // to root xj0
+			}
+		}
+		model.add(sum_x == 1);
+		model.add(sum_x1 == 0);
+		sum_x.clear();
+		sum_x1.clear();
+		
+		for( u_int i = 0; i < instance.n_nodes-1; i++ ) {
+			for( u_int j = 0; j<2*instance.n_edges; j+=2 ) {
+				if( instance.edges[j/2].v1==0 ){
+					sum_f  += f[j +i*stride]; // out of root x0j
+					sum_f1 += f[j+1 +i*stride]; // to root xj0
+				}
+				if( instance.edges[j/2].v2==0 ){
+					sum_f  += f[j+1 +i*stride]; // out of root x0j
+					sum_f1 += f[j +i*stride]; // to root xj0
+				}
+			}
+			model.add(sum_f == z[i]);
+			model.add(sum_f1 == 0);
+			sum_f.clear();
+			sum_f1.clear();
+		}
+		
+		for( u_int i = 0; i < instance.n_nodes-1; i++ ) {
+			for( u_int j = 0; j<2*instance.n_edges; j+=2 ) {
+				model.add( f[j +i*stride] <= x[j]);
+				model.add( f[j+1 +i*stride] <= x[j+1]);
+			}
+		}
+		
+		
+		
+		// select exactly k nodes
+		for( u_int i = 0; i <  instance.n_nodes-1; i++ ) {
+			sum_z += z[i];
+		}
+		model.add(sum_z == k);
+		sum_z.clear();
+		
+		
+		// flow continuity
+		for( u_int n = 0; n < instance.n_nodes-1; n++ ) {
+			for( u_int j = 1; j < instance.n_nodes; j++ ){
+				for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
+					if(instance.edges[i/2].v1 ==j)
+						sum_x += -f[i +n*stride] + f[i+1 +n*stride];
+					if(instance.edges[i/2].v2 ==j)
+						sum_x +=  f[i +n*stride] - f[i+1 +n*stride];
+				}
+				if(j==(n+1)){
+					model.add(sum_x == z[n]);}
+				else{
+					model.add(sum_x == 0);}
+				sum_x.clear();
+			}
+		}
+		
+
 
 	}
 	catch( IloException &e ) {

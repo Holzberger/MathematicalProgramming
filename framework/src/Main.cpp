@@ -2,6 +2,7 @@
 #define __MAIN__CPP__
 
 #include <iostream>
+#include <fstream>
 #include "Tools.h"
 #include "Instance.h"
 #include "kMST_ILP.h"
@@ -39,15 +40,19 @@ int main( int argc, char *argv[] )
 				break;
 		}
 	}
-
-	// read instance
+	
 	Instance inst;
 	inst.import( file );
-//	inst.create( "g10", 2001, 40000 );
+	//	inst.create( "g10", 2001, 40000 );
 
 	// solve instance
 	kMST_ILP ilp( inst, model_type, k );
 	ilp.solve();
+	ilp.write_output();
+
+
+	
+	
 
 	return 0;
 } // main

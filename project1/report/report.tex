@@ -12,10 +12,10 @@
 
 %
 \section{Introduction}
-
+For this Project we compare the single commodity flow formulation (SCF-formulation) , multi commodity flow formulation (MCF-formulation) and the Miller Tuckker Zemlin formulation (MTZ-formulation) of the k-minimum spanning tree problem (k-mst) solved by the IBM Cplex solver. The tests are performed on a Virtual Machine in a Lubuntu20.10-Linux distribution with Intel-i5-4300M 2.6GHz CPU. We investigate 10 different instances for which we solve the k-mst with the time restriction of 1 hour and memory-restriction of 6GB.
 \section{SCF-Formulation}
 \subsection{Model}
-In the directed SCF-Formulation we deal with arc variables $x_{i,j}$ defined by (\ref{scf:f8}), flow variables $f_{i,j}$ defined on each arc by (\ref{scf:f9}) and binary node variables $z_i$ defined by (\ref{scf:f10}) on each node. The directed SCF-Formulation is given as:
+In the directed SCF-formulation we deal with arc variables $x_{i,j}$ defined by (\ref{scf:f8}), flow variables $f_{i,j}$ defined on each arc by (\ref{scf:f9}) and binary node variables $z_i$ defined by (\ref{scf:f10}) on each node. The directed SCF-formulation is given as:
 \begin{gather}
   \min\sum\limits_{\{i,j\}\in E}(x_{i,j}+ x_{j,i})c_{i,j} \label{scf:f0}\\
   \sum\limits_{(i,j)\in \delta^+(0) } x_{i,j} =1 \label{scf:f1}\\
@@ -29,12 +29,40 @@ In the directed SCF-Formulation we deal with arc variables $x_{i,j}$ defined by 
   f_{i,j} \in \mathbb{N}\cap[0,k] \quad \forall (i,j)\in A\label{scf:f9}\\
   z_{i} \in \mathbb{B} \quad \forall i \in N\label{scf:f10}\\
 \end{gather}
-Here in (\ref{scf:f0}) the cost of all arcs is summed where by optimality the formulation will only allow to select one arc at each undirected esge. Next in (\ref{scf:f1}) we set the number of outgoing arcs from the dummy root node to exactly $1$ and similarly in constraint (\ref{scf:f2}) the outflow from the dummy root to exactly $k$. Since we dont want an ingoing edge into the dummy root and further no flow back into the root we state these restrictions in the constraints (\ref{scf:f3}) and (\ref{scf:f4}). Constraint (\ref{scf:f5}) states that whenever we have a nonzero flow we musst select the corresponding arc for that flow. Any selected node consumes one unit of flow such that the sum of the outgoing flow variables is one less than the sum of the ingoing flow variables, which is formulated in (\ref{scf:f7}). Note that the latter constraint is not formulated for the root node since there all incoming flows are $0$. 
-
+Here in (\ref{scf:f0}) the cost of all arcs is summed, where by optimality the formulation only allows to select one arc at each undirected edge. Next in (\ref{scf:f1}) we set the number of outgoing arcs from the dummy root node to exactly $1$ and similarly in constraint (\ref{scf:f2}) the outflow from the dummy root to exactly $k$. Since we don't want an ingoing edge into the dummy root and further no flow back into the root we state these restrictions in the constraints (\ref{scf:f3}) and (\ref{scf:f4}). Constraint (\ref{scf:f5}) states that whenever we have a nonzero flow we must select the corresponding arc for that flow. Any selected node consumes one unit of flow, such that the sum of the outgoing flow variables is one less than the sum of the ingoing flow variables, which is formulated in (\ref{scf:f7}). Note that the latter constraint is not formulated for the root node since there all incoming flows are $0$.
+\subsection{Results on Instances}
+\begin{tabular}{rrrlrrrr}
+\toprule
+ instance &     k &  total\_nodes & solution\_status &  b\&b\_nodes &  best\_obj &  cpu\_time [s] &  optimality\_gap [\%] \\
+\midrule
+        1 &     2 &           10 &         Optimal &          0 &        46 &             0 &                 0.0 \\
+        1 &     5 &           10 &         Optimal &          0 &       477 &             0 &                 0.0 \\
+        2 &     4 &           20 &         Optimal &         81 &       373 &             0 &                 0.0 \\
+        2 &    10 &           20 &         Optimal &          0 &      1390 &             0 &                 0.0 \\
+        3 &    10 &           50 &         Optimal &       2013 &       725 &             1 &                 0.0 \\
+        3 &    25 &           50 &         Optimal &          0 &      3074 &             1 &                 0.0 \\
+        4 &    14 &           70 &         Optimal &       1008 &       909 &             1 &                 0.0 \\
+        4 &    35 &           70 &         Optimal &        504 &      3292 &             2 &                 0.0 \\
+        5 &    20 &          100 &         Optimal &        810 &      1235 &             3 &                 0.0 \\
+        5 &    50 &          100 &         Optimal &        512 &      4898 &             3 &                 0.0 \\
+        6 &    40 &          200 &         Optimal &       3678 &      2068 &            47 &                 0.0 \\
+        6 &   100 &          200 &         Optimal &        622 &      6705 &            18 &                 0.0 \\
+        7 &    60 &          300 &         Optimal &        596 &      1335 &            26 &                 0.0 \\
+        7 &   150 &          300 &         Optimal &        833 &      4534 &            37 &                 0.0 \\
+        8 &    80 &          400 &         Optimal &       4314 &      1620 &           119 &                 0.0 \\
+        8 &   200 &          400 &         Optimal &        723 &      5787 &            47 &                 0.0 \\
+        9 &   200 &         1000 &         Optimal &        832 &      2289 &          2648 &                 0.0 \\
+        9 &   500 &         1000 &         Optimal &       1010 &      7595 &           608 &                 0.0 \\
+       10 &   400 &         2000 &        Feasible &         80 &     10526 &            TL &               100.0 \\
+       10 &  1000 &         2000 &        Feasible &        970 &     16085 &            TL &                 7.2 \\
+\bottomrule
+\end{tabular}
+\subsection{Discussion of Results}
+Except for the last instance, we are able to obtain optimal solutions for the SCF-formulation. Compared to the MTZ-formulation we need less b\&b nodes, but more than for the MCF-formulation, meaning that it is a stronger formulation than SCF but weaker than MCF. Performance wise it is in second place, because of its large optimality gaps for the last instance, that are not present in the MTZ-fomulation, but can solve more instances than MCF-formulation.
 
 \section{MCF-Formulation}
 \subsection{Model}
-We formulate a directd MCF-Formulation. It uses the binary arc variables $x_{i,j}$ defined in (\ref{mcf:f8}), binary node variables $z_i$ defined by (\ref{mcf:f10}) where we exclude the root node from this variables and the positive flow variables $f_{i,j}^\alpha$ for each arc and node (exept the dummy root) that are defined in (\ref{mcf:f9}). 
+We formulate a direct MCF-formulation. It uses the binary arc variables $x_{i,j}$ defined in (\ref{mcf:f8}), binary node variables $z_i$ defined by (\ref{mcf:f10}), where we exclude the root node from these variables and the positive flow variables $f_{i,j}^\alpha$ for each arc and node (exept the dummy root) that are defined in (\ref{mcf:f9}).
 \begin{gather}
   \min\sum\limits_{\{i,j\}\in E}(x_{i,j}+ x_{j,i})c_{i,j} \label{mcf:f0}\\
   \sum\limits_{(i,j)\in \delta^+(0) } x_{i,j} =1 \label{mcf:f1}\\
@@ -49,9 +77,29 @@ We formulate a directd MCF-Formulation. It uses the binary arc variables $x_{i,j
   f_{i,j}^\alpha \in \mathbb{N}\cap[0,1] \quad \forall (i,j)\in A \ \forall \alpha \in N \setminus \{0\}\label{mcf:f9}\\
   z_{i} \in \mathbb{B} \quad \forall i \in N\setminus \{0\}\label{mcf:f10}\\
 \end{gather}
-As in the SCF-Formulation we select exactly one outgoing arc from the root and no ingoing arc by the constraints (\ref{mcf:f1}) and (\ref{mcf:f3}). For this formulation we can have for each node a different commodity of flow and therefore we only need to send out one unit of a commodity from the root that corresponds to a selected node as can be seen in constraint (\ref{mcf:f2}). Again we dont want any commodity of flow back into the root which is stated in (\ref{mcf:f4}).
-By (\ref{mcf:f5}) we select an arc if it has a nonzero flow in any commodity. Snce we dont include the root in the node variables we only need to select $k$ of them in (\ref{mcf:f6}). Constraint (\ref{mcf:f7}) is stating that when we select a node variable, that node consumes its assigned commodity by none of the other commodities. 
-
+As in the SCF-formulation we select exactly one outgoing arc from the root and no ingoing arc by the constraints (\ref{mcf:f1}) and (\ref{mcf:f3}). For this formulation we can have for each node a different commodity of flow and therefore we only need to send out one unit of a commodity from the root, that corresponds to a selected node, as can be seen in constraint (\ref{mcf:f2}). Again we don't want any commodity of flow back into the root, which is stated in (\ref{mcf:f4}).
+By (\ref{mcf:f5}) we select an arc if it has a nonzero flow in any commodity. Since we don't include the root in the node variables we only need to select $k$ of them in (\ref{mcf:f6}). Constraint (\ref{mcf:f7}) is stating that when we select a node variable, that node consumes its assigned commodity by none of the other commodities.
+\subsection{Results on Instances}
+\begin{tabular}{rrrlrrrr}
+\toprule
+ instance &    k &  total\_nodes & solution\_status &  b\&b\_nodes &  best\_obj &  cpu\_time [s] &  optimality\_gap [\%] \\
+\midrule
+        1 &    2 &           10 &         Optimal &          0 &        46 &             0 &                 0.0 \\
+        1 &    5 &           10 &         Optimal &          0 &       477 &             0 &                 0.0 \\
+        2 &    4 &           20 &         Optimal &          0 &       373 &             0 &                 0.0 \\
+        2 &   10 &           20 &         Optimal &          0 &      1390 &             0 &                 0.0 \\
+        3 &   10 &           50 &         Optimal &          0 &       725 &             1 &                 0.0 \\
+        3 &   25 &           50 &         Optimal &          0 &      3074 &             1 &                 0.0 \\
+        4 &   14 &           70 &         Optimal &         76 &       909 &             5 &                 0.0 \\
+        4 &   35 &           70 &         Optimal &          0 &      3292 &             4 &                 0.0 \\
+        5 &   20 &          100 &         Optimal &          0 &      1235 &            11 &                 0.0 \\
+        5 &   50 &          100 &         Optimal &          0 &      4898 &            17 &                 0.0 \\
+        6 &   40 &          200 &         Optimal &        164 &      2068 &           558 &                 0.0 \\
+        6 &  100 &          200 &         Optimal &          0 &      6705 &           342 &                 0.0 \\
+\bottomrule
+\end{tabular}
+\subsection{Discussion of Results}
+The MCF-formulation can't solve all instances with the present machine-restrictions. This is due to the fact that it creates the most constraints of the three investigated formulations and therefore tops out from lack of memory when solving the instances 7 to 10 (for example when allowing 8GB memory instance 7 can be solved). On the other hand it is the strongest formulation, since it often doesn't require b\&b nodes, which the other two formulations mostly do. This shows that the MCF-formulation's polyhedra might be very close tho the convex hull of the considered problem. Since we can't attempt to solve instances higher than 6 it is performance wise in last place of the considered formulations.
 
 \section{MTZ-Formulation}
 \subsection{Model}
@@ -66,12 +114,41 @@ For a directed MTZ-formulation we have binary arc-variables $x_{i,j}$, defnined 
   \sum\limits_{(i,j)\in \delta^+(l)} x_{i,j} \leq (k-1)z_l \quad \forall l\in N\setminus \{0\}\label{mtz:f6}\\
   x_{i,j} \in \mathbb{B} \quad \forall (i,j)\in A\label{mtz:f7}\\
   z_{i} \in \mathbb{B} \quad \forall i \in N\label{mtz:f8}\\
-  f_{i} \in \mathbb{N}\cap[1,k-1] \quad \forall i \in N \setminus \{0\}\label{mtz:f9}\\
+  f_{i} \in \mathbb{N}\cap[1,k] \quad \forall i \in N \setminus \{0\}\label{mtz:f9}\\
   f_{0} = 0 \label{mtz:f10}
 \end{gather}
-Since we need to deals with the dummy root we select by (\ref{mtz:f0}) the number of outgoing arcs from the root to exactly $1$ and in (\ref{mtz:f1}) the number of ingoing root-arcs to $0$.
-By (\ref{mtz:f3}) we select exacly $k$ nodes, note that the other constraints force that the dummy root is not selected. 
-In (\ref{mtz:f4}) the MTZ constraint forces in every selected arc the level variable to increase by $1$ when going from the start to the end-node of the arc. Next the arc and node variables are connected by (\ref{mtz:f5}), which tells us that for every selected node there musst be an ingoing arc and (\ref{mtz:f6}) that describes that there can only be an outgoing arc at some node when that node is selected. Note that the latter constraint is not formulated for the dummy root, which enables solvability. 
+Since we need to deals with the dummy root, we select by (\ref{mtz:f0}) the number of outgoing arcs from the root to exactly $1$ and in (\ref{mtz:f1}) the number of ingoing root-arcs to $0$.
+By (\ref{mtz:f3}) we select exacly $k$ nodes, note that the other constraints force that the dummy root is not selected.
+In (\ref{mtz:f4}) the MTZ constraint forces in every selected arc the level variable to increase by $1$ when going from the start to the end-node of the arc. Next the arc and node variables are connected by (\ref{mtz:f5}), which tells us that for every selected node there must be an ingoing arc and (\ref{mtz:f6}), that describes that there can only be an outgoing arc at some node when that node is selected. Note that the latter constraint is not formulated for the dummy root, which enables solvability.
+\subsection{Results on Instances}
+\begin{tabular}{rrrlrrrr}
+\toprule
+ instance &     k &  total\_nodes & solution\_status &  b\&b\_nodes &  best\_obj &  cpu\_time [s] &  optimality\_gap [\%] \\
+\midrule
+        1 &     2 &           10 &         Optimal &          0 &        46 &             0 &                0.00 \\
+        1 &     5 &           10 &         Optimal &          0 &       477 &             0 &                0.00 \\
+        2 &     4 &           20 &         Optimal &          7 &       373 &             0 &                0.00 \\
+        2 &    10 &           20 &         Optimal &         13 &      1390 &             0 &                0.00 \\
+        3 &    10 &           50 &         Optimal &         16 &       725 &             0 &                0.00 \\
+        3 &    25 &           50 &         Optimal &       2317 &      3074 &             2 &                0.00 \\
+        4 &    14 &           70 &         Optimal &         19 &       909 &             0 &                0.00 \\
+        4 &    35 &           70 &         Optimal &        857 &      3292 &             1 &                0.00 \\
+        5 &    20 &          100 &         Optimal &        440 &      1235 &             1 &                0.00 \\
+        5 &    50 &          100 &         Optimal &       2671 &      4898 &             4 &                0.00 \\
+        6 &    40 &          200 &         Optimal &      14399 &      2068 &            75 &                0.00 \\
+        6 &   100 &          200 &         Optimal &      10354 &      6705 &            48 &                0.00 \\
+        7 &    60 &          300 &         Optimal &        496 &      1335 &             7 &                0.00 \\
+        7 &   150 &          300 &         Optimal &       2133 &      4534 &            15 &                0.00 \\
+        8 &    80 &          400 &         Optimal &        280 &      1620 &             8 &                0.00 \\
+        8 &   200 &          400 &         Optimal &      18830 &      5787 &           343 &                0.00 \\
+        9 &   200 &         1000 &        Feasible &     110907 &      2289 &          TL &                0.31 \\
+        9 &   500 &         1000 &        Feasible &      46082 &      7595 &          TL &                0.35 \\
+       10 &   400 &         2000 &         Optimal &      30947 &      4182 &          1819 &                0.00 \\
+       10 &  1000 &         2000 &        Feasible &      22496 &     14991 &          TL &                0.26 \\
+\bottomrule
+\end{tabular}
+\subsection{Discussion of Results}
+The MTZ-formaulation is the only formulation that could obtain optimal solutions in the given amount of time. Note that for some of the larger instances the optimality gap is not yet zero but the best solution is already optimal. Next we observe that the MTZ-formulation crates the most b\&b nodes of all three formulations showing that it is the weakest. Further, it uses the least amount of variables of the three presented formulations. Performance wise it is the best with respect to the given machine requirements, since it can solve all instances to optimality.
 %
 %Bibliography
 \newpage

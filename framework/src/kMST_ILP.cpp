@@ -6,6 +6,23 @@ kMST_ILP::kMST_ILP( Instance &_instance, string _model_type, int _k ) :
 	if( k == 0 ) k = instance.n_nodes;
 }
 
+void kMST_ILP::write_output()
+{	
+	ofstream myfile;
+  	myfile.open (model_type+".txt", ios::out | ios::app);
+  	myfile << model_type<<"\n";
+  	myfile << k<<"\n";
+  	myfile << instance.n_nodes<<"\n";
+  	myfile << cplex.getStatus()<<"\n";
+  	myfile << cplex.getNnodes()<<"\n";
+  	myfile << cplex.getObjValue()<<"\n";
+  	myfile << Tools::CPUtime()<<"\n";
+  	myfile << cplex.getMIPRelativeGap()<<"\n";
+  	myfile << cplex.getIncumbentNode()<<"\n";
+  	myfile.close();
+	
+}
+
 void kMST_ILP::solve()
 {
 	try {
@@ -32,8 +49,8 @@ void kMST_ILP::solve()
 
 		// set parameters
 		cplex.setParam( IloCplex::Param::Threads, 1 ); // only use a single thread
-		cplex.setParam( IloCplex::Param::TimeLimit, 3600 ); // set time limit to 1 hour
-		cplex.setParam( IloCplex::Param::WorkMem, 8192 ); // set memory limit to 8 GB
+		cplex.setParam( IloCplex::Param::TimeLimit, 3 ); // set time limit to 1 hour
+		cplex.setParam( IloCplex::Param::WorkMem, 6144 ); // set memory limit to 8 GB 8192
 
 		epsInt = cplex.getParam( IloCplex::Param::MIP::Tolerances::Integrality );
 		epsOpt = cplex.getParam( IloCplex::Param::Simplex::Tolerances::Optimality );
@@ -46,7 +63,7 @@ void kMST_ILP::solve()
 			cplex.use( &cb, contextmask );
 		}
 
-		// solve model
+		// solve model cplex.getMIPRelativeGap();
 		cout << "Calling CPLEX solve ...\n";
 		cplex.solve();
 		cout << "CPLEX finished.\n\n";
@@ -54,30 +71,8 @@ void kMST_ILP::solve()
 		cout << "Branch-and-Bound nodes: " << cplex.getNnodes() << "\n";
 		cout << "Objective value: " << cplex.getObjValue() << "\n";
 		cout << "CPU time: " << Tools::CPUtime() << "\n\n";
-		IloNumArray vals(env);
-		IloNumArray valsf(env);
-		cplex.getValues(vals, x);
 		
-		for(u_int i=0; i<instance.n_edges*2; i+=2){
-			if (abs(vals[i]) > 1e-4)
-				env.out() << i/2 <<"("<<instance.edges[i/2].v1 <<","<< instance.edges[i/2].v2<<"),";
-			if (abs(vals[i+1]) > 1e-4)
-				env.out() << i/2 <<"("<< instance.edges[i/2].v2 <<","<< instance.edges[i/2].v1<<"),";
-		}
-		env.out() << "\n";
-		
-		cplex.getValues(vals, f);
-		for(u_int j=0; j<instance.n_nodes-1; j++){
-			env.out() <<"\n var"<<j<<":\n";
-			for(u_int i=0; i<instance.n_edges*2; i+=2){
-				if (abs(vals[i+ j*instance.n_edges*2]) > 1e-4)
-					env.out() << i/2 <<"("<<instance.edges[i/2].v1 <<","<< instance.edges[i/2].v2<<") f "<<vals[i+ j*instance.n_edges*2]<<", ";
-				if (abs(vals[i+1 + j*instance.n_edges*2]) > 1e-4)
-					env.out() << i/2 <<"("<< instance.edges[i/2].v2 <<","<< instance.edges[i/2].v1<<") f "<<vals[i+1+ j*instance.n_edges*2]<<", ";
-			}
-		}
-		cplex.getValues(vals, z);
-		env.out() << "Values = " << vals << endl;
+
 
 	}
 	catch( IloException &e ) {
@@ -131,9 +126,6 @@ void kMST_ILP::modelSCF()
 {
 	try {
 		
-		// ++++++++++++++++++++++++++++++++++++++++++
-		// TODO build single commodity flow model
-		// ++++++++++++++++++++++++++++++++++++++++++
 		x = IloBoolVarArray(env, instance.n_edges*2);
 		z = IloBoolVarArray(env, instance.n_nodes);
 		f = IloIntVarArray(env, instance.n_edges*2, 0, k);
@@ -143,6 +135,7 @@ void kMST_ILP::modelSCF()
 		IloExpr sum_x1( env );
 		IloExpr sum_f( env );
 		IloExpr sum_f1( env );
+		IloExpr sum_z( env );
 		
 		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
 				objective += (x[i] + x[i+1])*instance.edges[i/2].weight;
@@ -152,14 +145,14 @@ void kMST_ILP::modelSCF()
 		
 		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
 			if( instance.edges[i/2].v1==0 ){
-				sum_x  += x[i]; // out of root x0j
-				sum_x1 += x[i+1]; // to root xj0
+				sum_x  += x[i]; 
+				sum_x1 += x[i+1]; 
 				sum_f  += f[i];
 				sum_f1 += f[i+1];
 			}
 			if( instance.edges[i/2].v2==0 ){
-				sum_x  += x[i+1]; // out of root x0j
-				sum_x1 += x[i]; // to root xj0
+				sum_x  += x[i+1]; 
+				sum_x1 += x[i]; 
 				sum_f  += f[i+1]; 
 				sum_f1 += f[i];
 			}
@@ -173,22 +166,17 @@ void kMST_ILP::modelSCF()
 		sum_f.clear();
 		sum_f1.clear();
 		
-		// select arc whenever there is a flow
 		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
 			model.add(f[i] <= k*x[i]);
 			model.add(f[i+1] <= k*x[i+1]);
 		}
 		
-		IloExpr sum_z( env );
-		
-		// select exactly k+1 nodes
 		for( u_int i = 0; i <  instance.n_nodes; i++ ) {
 			sum_z += z[i];
 		}
 		model.add(sum_z == k+1);
 		sum_z.clear();
 		
-		// flow continuity
 		for( u_int j = 1; j < instance.n_nodes; j++ ){
 			for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
 				if(instance.edges[i/2].v1 ==j)
@@ -222,9 +210,6 @@ void kMST_ILP::modelMCF()
 {
 	try {
 
-		// ++++++++++++++++++++++++++++++++++++++++++
-		// TODO build multi commodity flow model
-		// ++++++++++++++++++++++++++++++++++++++++++
 		x = IloBoolVarArray(env, instance.n_edges*2);
 		z = IloBoolVarArray(env, instance.n_nodes-1);
 		f = IloIntVarArray(env, instance.n_edges*2*(instance.n_nodes-1), 0, 1);
@@ -245,12 +230,12 @@ void kMST_ILP::modelMCF()
 
 		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
 			if( instance.edges[i/2].v1==0 ){
-				sum_x  += x[i]; // out of root x0j
-				sum_x1 += x[i+1]; // to root xj0
+				sum_x  += x[i]; 
+				sum_x1 += x[i+1]; 
 			}
 			if( instance.edges[i/2].v2==0 ){
-				sum_x  += x[i+1]; // out of root x0j
-				sum_x1 += x[i]; // to root xj0
+				sum_x  += x[i+1]; 
+				sum_x1 += x[i]; 
 			}
 		}
 		model.add(sum_x == 1);
@@ -282,17 +267,12 @@ void kMST_ILP::modelMCF()
 			}
 		}
 		
-		
-		
-		// select exactly k nodes
 		for( u_int i = 0; i <  instance.n_nodes-1; i++ ) {
 			sum_z += z[i];
 		}
 		model.add(sum_z == k);
 		sum_z.clear();
 		
-		
-		// flow continuity
 		for( u_int n = 0; n < instance.n_nodes-1; n++ ) {
 			for( u_int j = 1; j < instance.n_nodes; j++ ){
 				for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
@@ -308,8 +288,13 @@ void kMST_ILP::modelMCF()
 				sum_x.clear();
 			}
 		}
-		
 
+		objective.end();
+		sum_x.end();
+    sum_x1.end();
+		sum_f.end();
+		sum_f1.end();
+		sum_z.end();
 
 	}
 	catch( IloException &e ) {
@@ -325,22 +310,12 @@ void kMST_ILP::modelMCF()
 void kMST_ILP::modelMTZ()
 {
 	try {
-		for( u_int i = 0; i <  instance.n_edges; i++ ) {
-		cout << instance.edges[i].v1 << " ";
-		cout << instance.edges[i].v2 << " ";
-		cout << instance.edges[i].weight << "\n";
-	}
 
-		// ++++++++++++++++++++++++++++++++++++++++++
-		// TODO build Miller-Tucker-Zemlin model
-		// ++++++++++++++++++++++++++++++++++++++++++
-		u_int root_id = 0;
 		x = IloBoolVarArray(env, instance.n_edges*2);
 		z = IloBoolVarArray(env, instance.n_nodes);
 		f = IloIntVarArray(env);
-		f.add(IloIntVar(env, 0, 0)); // root has 0 value
-		f.add(IloIntVarArray(env, instance.n_nodes-1, 1, k-1));
-		
+		f.add(IloIntVar(env, 0, 0)); 
+		f.add(IloIntVarArray(env, instance.n_nodes-1, 1, k));
 		
 		IloExpr objective( env );
 		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
@@ -372,10 +347,10 @@ void kMST_ILP::modelMTZ()
 		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
 			model.add( f[instance.edges[i/2].v1] + x[i] <= f[instance.edges[i/2].v2] + k*(1-x[i]) );
 			//if(instance.edges[i/2].v1!=0)
-				model.add(f[instance.edges[i/2].v2] + x[i+1] <= f[instance.edges[i/2].v1] + k*(1-x[i+1]) );
+			model.add(f[instance.edges[i/2].v2] + x[i+1] <= f[instance.edges[i/2].v1] + k*(1-x[i+1]) );
 		}
 		
-		// exactly one outgoing edge at any node
+		// exactly one ingoing edge at any node
 		for( u_int i = 0; i <  instance.n_nodes; i++ ) {
 			for( u_int j = 0 ; j < instance.n_edges*2; j+=2 ){
 				if(instance.edges[j/2].v2 == i)
@@ -399,8 +374,6 @@ void kMST_ILP::modelMTZ()
 			sum_x.clear();
 		}
 		
-
-
 		sum_z.end();
 		sum_x.end();
 		objective.end();
@@ -418,8 +391,9 @@ void kMST_ILP::modelMTZ()
 kMST_ILP::~kMST_ILP()
 {
 	// free CPLEX resources
-//	x.end();
-//	z.end();
+	x.end();
+	z.end();
+	f.end();
 //	if( model_type == "scf" || model_type == "mcf" ) f.end();
 //	else if( model_type == "mtz" ) d.end();
 	cplex.end();

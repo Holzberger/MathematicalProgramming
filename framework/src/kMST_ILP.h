@@ -45,6 +45,7 @@ public:
 	kMST_ILP( Instance &_instance, string _model_type, int _k );
 	~kMST_ILP();
 	void solve();
+	void write_output();
 
 };
 

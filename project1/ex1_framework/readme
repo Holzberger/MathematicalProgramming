@@ -1,0 +1,3 @@
+To compile the project the given makefile was slightly modified. 
+Therefore please change the paths to cplex and system accordingly before running make.
+

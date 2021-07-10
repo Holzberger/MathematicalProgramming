@@ -40,6 +40,10 @@ private:
 	void modelMCF();
 	void modelMTZ();
 	
+	// count cuts
+	u_int u_cuts; // user cuts
+	u_int c_cuts; // candidate cuts
+	
 
 public:
 

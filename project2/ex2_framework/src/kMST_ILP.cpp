@@ -19,6 +19,8 @@ void kMST_ILP::write_output()
   	myfile << Tools::CPUtime()<<"\n";
   	myfile << cplex.getMIPRelativeGap()<<"\n";
   	myfile << cplex.getIncumbentNode()<<"\n";
+  	myfile << u_cuts<<"\n";
+  	myfile << c_cuts<<"\n";
   	myfile.close();
 	
 }
@@ -36,8 +38,8 @@ void kMST_ILP::solve()
 		if( model_type == "scf" ) modelSCF();
 		else if( model_type == "mcf" ) modelMCF();
 		else if( model_type == "mtz" ) modelMTZ();
-		else if( model_type == "dcc" ) modelCommon();//cout << "DC-CUT model: no additional constraints\n";
-		else if( model_type == "cec" ) modelCommon();//cout << "CE-CUT model: no additional constraints\n";
+		else if( model_type == "dcc1" ) modelCommon();//cout << "DC-CUT model: no additional constraints\n";
+		else if( model_type == "cec1" ) modelCommon();//cout << "CE-CUT model: no additional constraints\n";
 		else {
 			cerr << "No existing model chosen\n";
 			exit( -1 );
@@ -50,7 +52,7 @@ void kMST_ILP::solve()
 		// set parameters
 		cplex.setParam( IloCplex::Param::Threads, 1 ); // only use a single thread
 		cplex.setParam( IloCplex::Param::TimeLimit, 3600 ); // set time limit to 1 hour
-		cplex.setParam( IloCplex::Param::WorkMem, 6144 ); // set memory limit to 8 GB 8192
+		cplex.setParam( IloCplex::Param::WorkMem, 6144 ); // set memory limit to 6 GB 6144
 
 		epsInt = cplex.getParam( IloCplex::Param::MIP::Tolerances::Integrality );
 		epsOpt = cplex.getParam( IloCplex::Param::Simplex::Tolerances::Optimality );
@@ -61,7 +63,7 @@ void kMST_ILP::solve()
 
 		// set cut-callback for cycle-elimination cuts ("cec") or directed connection cuts ("dcc")
 		// both for integer (mandatory!) and fractional (optional) solutions
-		CutCallback cb( model_type,epsInt, epsOpt, instance, x, z );
+		CutCallback cb( model_type,epsInt, epsOpt, instance, x, z, u_cuts, c_cuts );
 		if( model_type == "dcc" || model_type == "cec" ) {
 			cout<<"setting cut callback \n";
 			CPXLONG contextmask = IloCplex::Callback::Context::Id::Candidate | IloCplex::Callback::Context::Id::Relaxation;
@@ -76,34 +78,33 @@ void kMST_ILP::solve()
 		cout << "Branch-and-Bound nodes: " << cplex.getNnodes() << "\n";
 		cout << "Objective value: " << cplex.getObjValue() << "\n";
 		cout << "CPU time: " << Tools::CPUtime() << "\n\n";
+
+		IloNumArray vals_x(env, instance.n_edges*2);
+		cplex.getValues(vals_x, x);
 		
-		//IloNumArray vals_x(env, instance.n_edges*2);
-		//cplex.getValues(vals_x, x);
-		
-		//for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
-		//	cout<<vals_x[i]<<", ";
-		//}
-		//cout<<"\n";
-		//for( u_int i = 1; i <  instance.n_edges*2; i+=2 ) {
-		//	cout<<vals_x[i]<<", ";
-		//}
-		//cout<<"\n";
-		//for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
-		//	if(vals_x[i]>epsInt)
-		//		cout<<"("<<instance.edges[i/2].v1<<","<<instance.edges[i/2].v2<<","<<vals_x[i]<<") ";
-		//	if(vals_x[i+1]>epsInt)
-		//		cout<<"("<<instance.edges[i/2].v2<<","<<instance.edges[i/2].v1<<","<<vals_x[i+1]<<") ";
+		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
+			cout<<vals_x[i]<<", ";
+		}
+		cout<<"\n";
+		for( u_int i = 1; i <  instance.n_edges*2; i+=2 ) {
+			cout<<vals_x[i]<<", ";
+		}
+		cout<<"\n";
+		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
+			if(vals_x[i]>epsInt)
+				cout<<"("<<instance.edges[i/2].v1<<","<<instance.edges[i/2].v2<<","<<vals_x[i]<<") ";
+			if(vals_x[i+1]>epsInt)
+				cout<<"("<<instance.edges[i/2].v2<<","<<instance.edges[i/2].v1<<","<<vals_x[i+1]<<") ";
 				
-		//}
-		//cout<<"\n";
+		}
+		cout<<"\n";
 		
-		//IloNumArray vals_z(env, instance.n_nodes);
-		//cplex.getValues(vals_z, z);
-		//for( u_int i = 0; i <  instance.n_nodes; i++ ) {
-		//if(vals_z[i]>epsInt)
-		//	cout<<i<<", ";
-		//}
-		
+		IloNumArray vals_z(env, instance.n_nodes);
+		cplex.getValues(vals_z, z);
+		for( u_int i = 0; i <  instance.n_nodes; i++ ) {
+		if(vals_z[i]>epsInt)
+			cout<<i<<", ";
+		}
 
 
 	}
@@ -135,19 +136,16 @@ void kMST_ILP::initCPLEX()
 	cout << "done.\n";
 }
 
-void kMST_ILP::modelCommon()
+void kMST_ILP::modelCommon() // initialize cec and dcc here
 {
 	try {
 
-		// +++++++++++++++++++++++++++++++++++++++++++++++
-		// TODO create variables, build common constraints
-		// +++++++++++++++++++++++++++++++++++++++++++++++
 		x = IloBoolVarArray(env, instance.n_edges*2);
 		z = IloBoolVarArray(env, instance.n_nodes);
 		
 		IloExpr objective( env );
-		IloExpr sum_x( env );
-		IloExpr sum_z( env );
+		IloExpr sum_x( env ); // arc variables
+		IloExpr sum_z( env ); // node variables
 
 		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
 				objective += (x[i] + x[i+1])*instance.edges[i/2].weight;
@@ -180,7 +178,7 @@ void kMST_ILP::modelCommon()
 		model.add(sum_x == 0);
 		sum_x.clear();
 		
-		// dont select root
+		// dont select root node
 		model.add(z[0] == 0);
 		sum_z.clear();
 		
@@ -191,7 +189,7 @@ void kMST_ILP::modelCommon()
 		model.add(sum_z == k);
 		sum_z.clear();
 		
-		// exactly one ingoing edge at any node
+		// exactly one ingoing edge at any node that is selected
 		for( u_int i = 1; i <  instance.n_nodes; i++ ) {
 			for( u_int j = 0 ; j < instance.n_edges*2; j+=2 ){
 				if(instance.edges[j/2].v2 == i)
@@ -203,15 +201,27 @@ void kMST_ILP::modelCommon()
 			sum_x.clear();
 		}
 		
-		// exactly one ingoing edge at any node
+		// outgoing edge of a node forces to select the node
+		//for( u_int i = 1; i <  instance.n_nodes; i++ ) {
+		//	for( u_int j = 0 ; j < instance.n_edges*2; j+=2 ){
+		//		if(instance.edges[j/2].v1 == i)
+		//			model.add(x[j] <= z[i]);
+		//		if(instance.edges[j/2].v2 == i)
+		//			model.add(x[j+1] <= z[i]);
+		//	}
+		//}
 		for( u_int i = 1; i <  instance.n_nodes; i++ ) {
 			for( u_int j = 0 ; j < instance.n_edges*2; j+=2 ){
 				if(instance.edges[j/2].v1 == i)
-					model.add(x[j] <= z[i]);
+					sum_x += x[j];
 				if(instance.edges[j/2].v2 == i)
-					model.add(x[j+1] <= z[i]);
+					sum_x += x[j+1];
 			}
+			model.add(sum_x <= z[i]*(k-1));
+			sum_x.clear();
 		}
+		
+		
 		
 		// k-1 arcs in total, since tree
 		for( u_int i = 0; i <  instance.n_edges*2; i++ ) {

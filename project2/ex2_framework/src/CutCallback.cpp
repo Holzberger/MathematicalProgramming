@@ -1,7 +1,9 @@
 #include "CutCallback.h"
 
-CutCallback::CutCallback( string _cut_type, double _epsI, double _epsO, Instance &_instance, IloBoolVarArray &_x, IloBoolVarArray &_z ) :
-	cut_type( _cut_type ), epsI( _epsI ), epsO( _epsO), instance( _instance ), context( NULL ), x( _x ), z( _z )
+CutCallback::CutCallback( string _cut_type, double _epsI, double _epsO, 
+					      Instance &_instance, IloBoolVarArray &_x, IloBoolVarArray &_z,
+						  u_int &_u_cuts, u_int &_c_cuts) :
+	cut_type( _cut_type ), epsI( _epsI ), epsO( _epsO), instance( _instance ), context( NULL ), x( _x ), z( _z ), u_cuts(_u_cuts), c_cuts(_c_cuts)
 {
 	arc_weights.resize( 2 * instance.n_edges );
 	
@@ -15,6 +17,11 @@ CutCallback::CutCallback( string _cut_type, double _epsI, double _epsO, Instance
 	
 	n_ucuts = 0;
 	multiplier_ucuts = 1;
+	
+	u_cuts = 0;
+	c_cuts = 0;
+	
+	
 
 }
 
@@ -105,8 +112,6 @@ void CutCallback::connectionCuts()
 			t++;
 			mc.update( 0, t);
 		}
-		
-
 			// add found violated cut to model
 			switch( context->getId() ) {
 				case IloCplex::Callback::Context::Id::Candidate:
@@ -115,6 +120,8 @@ void CutCallback::connectionCuts()
 						// decrease max number of user-cuts till next integer solution
 						multiplier_ucuts *= 0.75;
 						n_ucuts = 0;
+						
+						c_cuts++;
 					}
 					break;
 				case IloCplex::Callback::Context::Id::Relaxation:
@@ -122,13 +129,13 @@ void CutCallback::connectionCuts()
 						context->addUserCut( IloRange( env,  -((double)arc_counter+1)*epsO, sum_x - z[t], IloInfinity  ), 
 											 IloCplex::UseCutForce, IloFalse  );
 						n_ucuts++;
+						
+						u_cuts++;
 					}
 					break;
 				default:
-//					r.end();
 					throw IloCplex::Exception( -1, "Unexpected contextID" );
 			}
-//			r.end();
 			sum_x.clear();
 			sum_x.end();
  
@@ -157,32 +164,33 @@ void CutCallback::cycleEliminationCuts()
 		// TODO find violated cycle elimination cut inequalities
 		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+		
+		
+		
 		IloExpr sum_x( env );
 		
 		
-		// set arc weights
-		for( u_int j = 0 ; j < instance.n_edges*2; j+=2 ){
-			arc_weights[j/2] = 1 - xsol[j];
-			arc_weights[instance.n_edges+j/2] = 1 - xsol[j+1];
-		}
-		
-		u_int violated_path = 0;
-		SPResultT sp;
 
 		switch( context->getId() ) {
 			case IloCplex::Callback::Context::Id::Candidate:
-				
+				for( u_int j = 0 ; j < instance.n_edges*2; j+=2 ){
+					arc_weights[j/2] = 1 - xsol[j];
+					arc_weights[instance.n_edges+j/2] = 1 - xsol[j+1];
+				}
+				violated_path = 0;
 				for( u_int j = 0; j < instance.n_edges; j++ ){
 					sp = shortestPath(instance.edges[j].v2, instance.edges[j].v1 );
 					if( ( sp.weight+arc_weights[j]) < (1-epsO*((double)sp.path.size()+1)) ){
 						violated_path = 1;
-						sum_x += x[j*2];
+						// sum_x += x[j*2];
+						sum_x += x[j*2]+x[j*2+1];
 						break;
 					}
 					sp = shortestPath(instance.edges[j].v1, instance.edges[j].v2 );
 					if( ( sp.weight+arc_weights[j+instance.n_edges]) < (1-epsO*((double)sp.path.size()+1)) ){
 						violated_path = 1;
-						sum_x += x[j*2+1];
+						// sum_x += x[j*2+1];
+						sum_x += x[j*2]+x[j*2+1];
 						break;
 					}
 				}
@@ -192,22 +200,24 @@ void CutCallback::cycleEliminationCuts()
 					for(auto it = sp.path.begin(); it !=sp.path.end(); it++)
 						if(*it<instance.n_edges){
 							sum_x += x[(*it)*2];
+							sum_x += x[(*it)*2+1];//
 						}else{	
+							sum_x += x[(*it-instance.n_edges)*2];//
 							sum_x += x[(*it-instance.n_edges)*2+1];
 						}
 				}
 				
 				if(violated_path==1){
 				context->rejectCandidate( IloRange( env, -IloInfinity , sum_x, (double)sp.path.size()  ) );
+				c_cuts++;
 				}
+				sum_x.clear();
 				break;
 			case IloCplex::Callback::Context::Id::Relaxation:
 				break;
 			default:
 				throw IloCplex::Exception( -1, "Unexpected contextID" );
 		}
-				
-		sum_x.clear();
 		sum_x.end();
 
 	}
@@ -219,6 +229,7 @@ void CutCallback::cycleEliminationCuts()
 		cerr << "CutCallback: unknown exception.\n";
 		exit( -1 );
 	}
+	
 }
 
 /*

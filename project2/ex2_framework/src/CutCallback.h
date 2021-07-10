@@ -23,6 +23,10 @@ private:
 	IloNumArray xsol, zsol;
 	
 	
+	// count cuts
+	u_int &u_cuts; // user cuts
+	u_int &c_cuts; // candidate cuts
+	
 	// save arcs, <node1 to node2> by same order as in x here
 	list<pair<u_int, u_int>> arcs; 
 	
@@ -32,6 +36,11 @@ private:
 	// number of usercuts
 	u_int n_ucuts;
 	double multiplier_ucuts;
+	
+	
+	
+	// 1 if violated path identified 0 else
+	u_int violated_path;
 
 	// separate directed connection cuts
 	void connectionCuts();
@@ -54,7 +63,10 @@ private:
 	{
 		list<u_int> path;
 		double weight;
-	};
+	}sp;
+	
+	// shortest path structure
+	//SPResultT sp;
 
 	// arc weights for shortest path computation
 	// (should be set according to current LP solution)
@@ -70,7 +82,8 @@ private:
 
 public:
 
-	CutCallback( string _cut_type, double _epsI, double _epsO, Instance &_instance, IloBoolVarArray &_x, IloBoolVarArray &_z );
+	CutCallback( string _cut_type, double _epsI, double _epsO, Instance &_instance, IloBoolVarArray &_x, IloBoolVarArray &_z,
+				 u_int &_u_cuts, u_int &_c_cuts );
 	virtual ~CutCallback();
 
 	void invoke( const IloCplex::Callback::Context &_context );

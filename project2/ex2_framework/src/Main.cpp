@@ -48,7 +48,7 @@ int main( int argc, char *argv[] )
 	// solve instance
 	kMST_ILP ilp( inst, model_type, k );
 	ilp.solve();
-	// ilp.write_output();
+	ilp.write_output();
 
 
 	

@@ -149,6 +149,192 @@ In (\ref{mtz:f4}) the MTZ constraint forces in every selected arc the level vari
 \end{tabular}
 \subsection{Discussion of Results}
 The MTZ-formaulation is the only formulation that could obtain optimal solutions in the given amount of time. Note that for some of the larger instances the optimality gap is not yet zero but the best solution is already optimal. Next we observe that the MTZ-formulation crates the most b\&b nodes of all three formulations showing that it is the weakest. Further, it uses the least amount of variables of the three presented formulations. Performance wise it is the best with respect to the given machine requirements, since it can solve all instances to optimality.
+
+\section{Introduction}
+For this second Project we compare the cycle elimination cut formulation (CEC-formulation) and the directed cut formulation (DCC-formulation) of the k-minimum spanning tree problem (k-mst) solved by the IBM Cplex solver. The tests are performed on a Virtual Machine in a Lubuntu20.10-Linux distribution with Intel-i5-4300M 2.6GHz CPU. We investigate 10 different instances for which we solve the k-mst with the time restriction of 1 hour and memory-restriction of 6GB.
+
+\section{Basis-Formulation}
+Our CEC and DCC formulations are build on top of a common set of inequalities. Important is that this common set has a polynomial number of inequalities and is extended in the solution preocess by violated CEC or DCC inequalities. The Basis-Formulation is given by:
+\begin{gather}
+  \min\sum\limits_{\{i,j\}\in E}(x_{i,j}+ x_{j,i})c_{i,j} \label{bf:f0}\\
+  \sum\limits_{(i,j)\in \delta^+(0) } x_{i,j} =1 \label{bf:f1}\\
+  \sum\limits_{(i,j)\in \delta^-(0) } x_{i,j} =0 \label{bf:f2}\\
+  x_{i,j}+x_{j,i} \leq 1  \quad \forall (i,j)\in A \label{bf:f3}\\
+  \sum\limits_{j\in N\setminus \{0\}} z_j = k \label{bf:f4}\\
+  \sum\limits_{(i,j)\in \delta^-(j) } x_{i,j} =z_j  \quad \forall j\in V \label{bf:f5}\\
+  \sum\limits_{(i,j)\in \delta^+(i) } x_{i,j} \leq z_i(k-1)  \quad \forall j\in V\setminus\{0\} \label{bf:f6}\\
+  \sum\limits_{(i,j)\in A } x_{i,j} =k  \label{bf:f7}\\
+  x_{i,j} \in \mathbb{B} \quad \forall (i,j)\in A\label{bf:f7}\\
+  z_{i} \in \mathbb{B} \quad \forall i \in N\label{bf:f8}\\
+  z_{0} = 0 \label{bf:f10}
+\end{gather}
+In this formulation we use binary arc variables $x_{i,j}$ and binary vertex variables $z{i}$.
+The objective (\ref{bf:f0}) is to minimize the costs $c_{i,j}$ for selected edges $x_{i,j}$ that we convert in our formulation into two directed arcs $x_{i,j}, x_{j,i}$. By optimality only one arc is selected, but nevertheless we have added the strenthening inequlities (\ref{bf:f3}) that cut off integer-solutions with bidirectional arcs. Since we add an artificial root node with index $0$, we state in (\ref{bf:f1}) and (\ref{bf:f2}), that there is only one outgoing arc from the root and no arc back into the root. The next three inequalities are based on tree properties. (\ref{bf:f5}) is stating that there is exactly one ingoing arc into any selected vertex. Inequality (\ref{bf:f6}) ensures that whenever we select an arc that leads to some vertex, we also need to select that vertex. Finally in (\ref{bf:f7}) we ensure that there are $k$ arcs selected in a solution, as required for a tree. This formulation is not valid for the k-mst since it still allows solutions that contain circles with disconnected sub-graphs.
+
+
+\section{CEC-Formulation}
+\subsection{Model}
+To prevent circle-formulation in solutions we forbid it in this formulation explicitely by adding the CEC's:
+\begin{gather}
+	\sum\limits_{(i,j)\in C} x_{i,j} \leq |C|-1 \quad \forall C \in A, \ |C|\geq 2,\ C\text{ cycle } \label{cec:f0}\\
+\end{gather}
+The above set of inequalities grows exponential when increasing the nuber of vertices. Therefore we dont add all of them at once and rather identify them on the run. Whenever we generate a solution we check for violated CEC's by solving the separation problem by the algorithm \ref{cec:a0}. If no violated $CEC$ is found we conclude that the solution is valid and optimal.
+
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+  
+  \KwInput{Instance Graph $G=(V,A)$, current LP solution $(x,z)$}
+  \KwOutput{cycle C in the current LP solution that violates a CEC}
+  \tcc{find violated CEC by< formulating a shortest path problem}
+  $w_{i,j} := 1-x_{i,j}$ \tcp*{arc weights for shortest path problem}
+  $C \leftarrow \emptyset$  \tcp*{for returning violated cycles}
+  $P \leftarrow \emptyset$  \tcp*{for saving shortest paths}
+  \For{all $(u,v)\in A$}
+  {
+  	\tcc{compute shortest path $P$ from $v$ to $u$ w.r.t $w$}
+  	$P \leftarrow$ shortestPath$(v,u)$\;
+  	\If{$w_{u,v}+\sum\limits_{(i,j)\in P} w_{i,j}<1$}
+  	{
+  	\tcc{violated CEC found}
+  	$C \leftarrow P \cup (u,v)$\; 
+  	\textbf{break}\;
+  	}
+  }
+  \textbf{return} C\;
+\caption{separation problem for CEC: find a cycle $C\subseteq A$ with $\sum\limits_{(i,j)\in C}(1-x_{i,j})<1$}
+\label{cec:a0}
+\end{algorithm}
+
+When execution the branch and cut approach we have the option to add more CEC's in the LP-nodes when we solve for the relaxation and the solution is not integral. It was obsered that this slowed down the solution process on the testinstances. We therefore only generate violated inequalities when integral solutions are found.
+
+\subsection{Results on Instances}
+
+\begin{tabular}{rrrlrrrrll}
+\toprule
+ inst &     k &  tot\_nodes &  sol\_stat &  b\&b\_nodes &  best\_obj &  cpu\_time [s] &  opt\_gap [\%] & u-cuts & c-cuts \\
+\midrule
+    1 &     2 &         10 &   Optimal &          0 &        46 &             0 &         0.00 &      0 &      0 \\
+    1 &     5 &         10 &   Optimal &          0 &       477 &             0 &         0.00 &      0 &      0 \\
+    2 &     4 &         20 &   Optimal &          7 &       373 &             0 &         0.00 &      0 &      5 \\
+    2 &    10 &         20 &   Optimal &          0 &      1390 &             0 &         0.00 &      0 &      1 \\
+    3 &    10 &         50 &   Optimal &          0 &       725 &             0 &         0.00 &      0 &      3 \\
+    3 &    25 &         50 &   Optimal &        362 &      3074 &             0 &         0.00 &      0 &     16 \\
+    4 &    14 &         70 &   Optimal &         33 &       909 &             0 &         0.00 &      0 &      6 \\
+    4 &    35 &         70 &   Optimal &         86 &      3292 &             0 &         0.00 &      0 &     16 \\
+    5 &    20 &        100 &   Optimal &          4 &      1235 &             0 &         0.00 &      0 &      4 \\
+    5 &    50 &        100 &   Optimal &       1963 &      4898 &             1 &         0.00 &      0 &     47 \\
+    6 &    40 &        200 &   Optimal &       2533 &      2068 &             6 &         0.00 &      0 &     60 \\
+    6 &   100 &        200 &   Optimal &       4379 &      6705 &            10 &         0.00 &      0 &    201 \\
+    7 &    60 &        300 &   Optimal &        187 &      1335 &             4 &         0.00 &      0 &     15 \\
+    7 &   150 &        300 &   Optimal &        742 &      4534 &             4 &         0.00 &      0 &     30 \\
+    8 &    80 &        400 &   Optimal &        121 &      1620 &             5 &         0.00 &      0 &     15 \\
+    8 &   200 &        400 &   Optimal &       8492 &      5787 &            62 &         0.00 &      0 &    268 \\
+    9 &   200 &       1000 &   Optimal &      40393 &      2289 &           749 &         0.00 &      0 &    268 \\
+    9 &   500 &       1000 &  Feasible &      12712 &      7595 &          TL &         0.34 &      0 &   1744 \\
+   10 &   400 &       2000 &   Optimal &      18698 &      4182 &          3549 &         0.00 &      0 &    193 \\
+   10 &  1000 &       2000 &  Feasible &       7035 &     14991 &          TL &         0.27 &      0 &    140 \\
+\bottomrule
+\end{tabular}
+
+\section{DCC-Formulation}
+\subsection{Model}
+Another way to ensure that we create valid solutions is to generate solutions where all selected vertices are connected to the root node by some arcs. This DCC's can be formulated as:
+\begin{gather}
+	\sum\limits_{(i,j)\in \delta^+(S)} x_{i,j} \geq z_k \quad \forall S \in V:0 \in S \text{ and } k\in V\setminus S \label{dcc:f0}
+\end{gather}
+This time the separation problem can be formulated as an instance of the maxflow problem. The separation problem is given in algorithm \ref{dcc:a0}
+
+\begin{algorithm}[H]
+\DontPrintSemicolon
+  \KwInput{Instance Graph $G=(V,A)$, current LP solution $(x,z)$}
+  \KwOutput{set $S_s$ such that $\delta^+(S_s)$ violates a DCC} 
+  \tcc{find violated DCC by solving a maxplow problem}
+  $f_{i,j} := x_{i,j}$ \tcp*{arc flows for maxflow problem}
+  $s:=0$ \tcp*{source vertex is the root}
+  $(S_s, S_t) \leftarrow (\emptyset, \emptyset)$  \tcp*{for returning violated cycles}
+  $f_{max} \leftarrow 0$  \tcp*{for returning violated cycles}
+  \For{all $t=1$ to $|V|$}
+  {
+  	\tcc{compute maxflow between the vertices $s$ and $t$ w.r.t $f$}
+  	$(S_s, S_t, f_{max}) \leftarrow$ maxflow$(s,t)$ \tcp*{$s \in S_s$ are the source-side nodes and $t \in S_t$ are the target-side nodes}
+  	\If{$f_{max}<1$ and $k\in S_t$ and $z_k=1$}
+  	{
+  	\tcc{violated DCC found} 
+  	\textbf{break}\;
+  	}
+  }
+  \textbf{return} $(S_s, S_t, f_{max})$\;
+\caption{separation problem for DCC: find a set $S\subset V: 0\in S$ and $k\not\in S$ with $\sum\limits_{(i,j)\in\delta^+(S)}x_{i,j}<z_k$}
+\label{dcc:a0}
+\end{algorithm}
+
+This time we also add DCC's for nodes in the branch and cut tree where we dont have intergal solutions. Important is that we decrease the ammount of added inequalities when we find fractional solutions till we have reached an lower limit where we only add one inequalitie when we find a fractional solution.
+
+\subsection{Results on Instances}
+
+\begin{tabular}{rrrlrrrrll}
+\toprule
+ inst &     k &  tot\_nodes &  sol\_stat &  b\&b\_nodes &  best\_obj &  cpu\_time [s] &  opt\_gap [\%] & u-cuts & c-cuts \\
+\midrule
+    1 &     2 &         10 &   Optimal &          0 &        46 &             0 &         0.00 &      0 &      0 \\
+    1 &     5 &         10 &   Optimal &          0 &       477 &             0 &         0.00 &      2 &      0 \\
+    2 &     4 &         20 &   Optimal &          0 &       373 &             0 &         0.00 &      4 &      5 \\
+    2 &    10 &         20 &   Optimal &          0 &      1390 &             0 &         0.00 &      5 &      2 \\
+    3 &    10 &         50 &   Optimal &          0 &       725 &             0 &         0.00 &      8 &      1 \\
+    3 &    25 &         50 &   Optimal &          0 &      3074 &             0 &         0.00 &     13 &      4 \\
+    4 &    14 &         70 &   Optimal &         36 &       909 &             0 &         0.00 &     13 &      6 \\
+    4 &    35 &         70 &   Optimal &          0 &      3292 &             0 &         0.00 &     12 &      5 \\
+    5 &    20 &        100 &   Optimal &          0 &      1235 &             0 &         0.00 &     14 &      3 \\
+    5 &    50 &        100 &   Optimal &          0 &      4898 &             0 &         0.00 &     27 &      8 \\
+    6 &    40 &        200 &   Optimal &         47 &      2068 &             1 &         0.00 &     50 &     10 \\
+    6 &   100 &        200 &   Optimal &       1802 &      6705 &             6 &         0.00 &    109 &    102 \\
+    7 &    60 &        300 &   Optimal &          0 &      1335 &             1 &         0.00 &     22 &      4 \\
+    7 &   150 &        300 &   Optimal &        921 &      4534 &             9 &         0.00 &    131 &     27 \\
+    8 &    80 &        400 &   Optimal &         23 &      1620 &             3 &         0.00 &     67 &      9 \\
+    8 &   200 &        400 &   Optimal &       2164 &      5787 &            15 &         0.00 &    103 &     75 \\
+    9 &   200 &       1000 &   Optimal &        144 &      2289 &            34 &         0.00 &    168 &     11 \\
+    9 &   500 &       1000 &  Feasible &      98367 &      7595 &          TL &         0.13 &   1951 &   2233 \\
+   10 &   400 &       2000 &   Optimal &       4366 &      4182 &           560 &         0.00 &    359 &     61 \\
+   10 &  1000 &       2000 &  Feasible &      31979 &     14991 &          TL &         0.19 &   2569 &   3418 \\
+\bottomrule
+\end{tabular}
+
+
+\subsection{Results Project1 and Project2}
+\begin{tabular}{rrrrrrr}
+\toprule
+  inst &     k &  SCF & MCF & MTZ & CEC & DCC \\
+\midrule
+     1 &     2 &            0 &             0 &             0 &             0 &             0 \\
+     1 &     5 &            0 &             0 &             0 &             0 &             0 \\
+     2 &     4 &            0 &             0 &             0 &             0 &             0 \\
+     2 &    10 &            0 &             0 &             0 &             0 &             0 \\
+     3 &    10 &            1 &             1 &             0 &             0 &             0 \\
+     3 &    25 &            1 &             1 &             2 &             0 &             0 \\
+     4 &    14 &            1 &             5 &             0 &             0 &             0 \\
+     4 &    35 &            2 &             4 &             1 &             0 &             0 \\
+     5 &    20 &            3 &            11 &             1 &             0 &             0 \\
+     5 &    50 &            3 &            17 &             4 &             1 &             0 \\
+     6 &    40 &           47 &           558 &            75 &             6 &             1 \\
+     6 &   100 &           18 &           342 &            48 &            10 &             6 \\
+     7 &    60 &           26 &               &              7 &             4 &             1\\ 
+     7 &   150 &           37 &               &             15 &             4 &             9\\ 
+     8 &    80 &          119 &               &              8 &             5 &             3\\ 
+     8 &   200 &           47 &               &            343 &            62 &            15\\ 
+     9 &   200 &         2648 &               &           TL &             749 &            34\\ 
+     9 &   500 &          608 &               &           TL &            TL &              TL\\   
+    10 &   400 &           TL &               &           1819 &          3549 &           560\\ 
+    10 &  1000 &           TL &               &           TL &            TL &              TL\\   
+\bottomrule
+\end{tabular}
+
+
+
+
+
+
+
 %
 %Bibliography
 \newpage

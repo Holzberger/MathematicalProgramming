@@ -304,4 +304,3 @@ CutCallback::SPResultT CutCallback::shortestPath( u_int source, u_int target )
 	}
 	return sp;
 }
-

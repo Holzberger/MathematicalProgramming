@@ -38,8 +38,8 @@ void kMST_ILP::solve()
 		if( model_type == "scf" ) modelSCF();
 		else if( model_type == "mcf" ) modelMCF();
 		else if( model_type == "mtz" ) modelMTZ();
-		else if( model_type == "dcc1" ) modelCommon();//cout << "DC-CUT model: no additional constraints\n";
-		else if( model_type == "cec1" ) modelCommon();//cout << "CE-CUT model: no additional constraints\n";
+		else if( model_type == "dcc" ) modelCommon();//cout << "DC-CUT model: no additional constraints\n";
+		else if( model_type == "cec" ) modelCommon();//cout << "CE-CUT model: no additional constraints\n";
 		else {
 			cerr << "No existing model chosen\n";
 			exit( -1 );
@@ -79,33 +79,7 @@ void kMST_ILP::solve()
 		cout << "Objective value: " << cplex.getObjValue() << "\n";
 		cout << "CPU time: " << Tools::CPUtime() << "\n\n";
 
-		IloNumArray vals_x(env, instance.n_edges*2);
-		cplex.getValues(vals_x, x);
 		
-		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
-			cout<<vals_x[i]<<", ";
-		}
-		cout<<"\n";
-		for( u_int i = 1; i <  instance.n_edges*2; i+=2 ) {
-			cout<<vals_x[i]<<", ";
-		}
-		cout<<"\n";
-		for( u_int i = 0; i <  instance.n_edges*2; i+=2 ) {
-			if(vals_x[i]>epsInt)
-				cout<<"("<<instance.edges[i/2].v1<<","<<instance.edges[i/2].v2<<","<<vals_x[i]<<") ";
-			if(vals_x[i+1]>epsInt)
-				cout<<"("<<instance.edges[i/2].v2<<","<<instance.edges[i/2].v1<<","<<vals_x[i+1]<<") ";
-				
-		}
-		cout<<"\n";
-		
-		IloNumArray vals_z(env, instance.n_nodes);
-		cplex.getValues(vals_z, z);
-		for( u_int i = 0; i <  instance.n_nodes; i++ ) {
-		if(vals_z[i]>epsInt)
-			cout<<i<<", ";
-		}
-
 
 	}
 	catch( IloException &e ) {
@@ -202,14 +176,6 @@ void kMST_ILP::modelCommon() // initialize cec and dcc here
 		}
 		
 		// outgoing edge of a node forces to select the node
-		//for( u_int i = 1; i <  instance.n_nodes; i++ ) {
-		//	for( u_int j = 0 ; j < instance.n_edges*2; j+=2 ){
-		//		if(instance.edges[j/2].v1 == i)
-		//			model.add(x[j] <= z[i]);
-		//		if(instance.edges[j/2].v2 == i)
-		//			model.add(x[j+1] <= z[i]);
-		//	}
-		//}
 		for( u_int i = 1; i <  instance.n_nodes; i++ ) {
 			for( u_int j = 0 ; j < instance.n_edges*2; j+=2 ){
 				if(instance.edges[j/2].v1 == i)

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2021.3.5)  10 JUL 2021 22:06
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2021.3.5)  12 JUL 2021 00:41
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1014,13 +1014,13 @@ Make it at least 25.16252pt.
 We now make it that large for the rest of the document.
 This may cause the page layout to be inconsistent, however.
 
-[2] [3] [4] [5] [6] [7] [8] [9] [10]
+[2] [3] [4] [5] [6] [7] [8] [9] [10] [11]
 No file report.bbl.
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 343.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 343.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 347.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 347.
 (./report.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 343.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 343.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 347.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 347.
 
 
 Package rerunfilecheck Warning: File `report.out' has changed.
@@ -1028,17 +1028,17 @@ Package rerunfilecheck Warning: File `report.out' has changed.
 (rerunfilecheck)                or use package `bookmark'.
 
 Package rerunfilecheck Info: Checksums for `report.out':
-(rerunfilecheck)             Before: 673C85CF5384A52AB187F4CCF11A305E;1152
-(rerunfilecheck)             After:  917DD912F68B32B3A4AC589DD7746BC2;1299.
+(rerunfilecheck)             Before: 917DD912F68B32B3A4AC589DD7746BC2;1299
+(rerunfilecheck)             After:  7E6B4E2D8FADFD8B6C8CD39F20F76BD6;1438.
 
 LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 22605 strings out of 481239
- 403719 string characters out of 5920378
- 694450 words of memory out of 5000000
- 37331 multiletter control sequences out of 15000+600000
+ 22610 strings out of 481239
+ 403774 string characters out of 5920378
+ 696448 words of memory out of 5000000
+ 37333 multiletter control sequences out of 15000+600000
  543062 words of font info for 65 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  62i,17n,77p,1058b,560s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1061,10 +1061,10 @@ st/fonts/type1/public/amsfonts/cm/cmsy9.pfb></usr/share/texlive/texmf-dist/font
 s/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texlive/texmf-dist/fonts/type
 1/public/amsfonts/cm/cmtt9.pfb></usr/share/texlive/texmf-dist/fonts/type1/publi
 c/amsfonts/symbols/msbm10.pfb>
-Output written on report.pdf (10 pages, 224916 bytes).
+Output written on report.pdf (11 pages, 227548 bytes).
 PDF statistics:
- 351 PDF objects out of 1000 (max. 8388607)
- 315 compressed objects within 4 object streams
- 104 named destinations out of 1000 (max. 500000)
- 173 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 363 PDF objects out of 1000 (max. 8388607)
+ 326 compressed objects within 4 object streams
+ 107 named destinations out of 1000 (max. 500000)
+ 189 words of extra memory for PDF output out of 10000 (max. 10000000)
 

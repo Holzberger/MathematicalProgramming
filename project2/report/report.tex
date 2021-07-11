@@ -2,7 +2,7 @@
 \input{Packages}
 
 
-\title{Programming Exercise 1}
+\title{Programming Exercise 2}
 \author{e11921655 Fabian Holzberger}
 \date{\today}
 
@@ -236,6 +236,8 @@ When execution the branch and cut approach we have the option to add more CEC's 
    10 &  1000 &       2000 &  Feasible &       7035 &     14991 &          TL &         0.27 &      0 &    140 \\
 \bottomrule
 \end{tabular}
+\subsection{Discussion of Results}
+As can be seen in the table above the CEC formulation can obtain optimal solutions for all instances exept two. For the two instances were nonoptmal solutions were obtained we see that the optimality bound is less than 0.5 $\%$. As we can see below, this bound can be improved by considering the DCC formulation.
 
 \section{DCC-Formulation}
 \subsection{Model}
@@ -299,7 +301,8 @@ This time we also add DCC's for nodes in the branch and cut tree where we dont h
    10 &  1000 &       2000 &  Feasible &      31979 &     14991 &          TL &         0.19 &   2569 &   3418 \\
 \bottomrule
 \end{tabular}
-
+\subsection{Results on Instances}
+The DCC formulation can obtain optimal solutions for the same instances as the CEC formulation. In addition to that the instances that are not solved to optimality have a lower optimality gap, which is now below 0.2 $\%$. We can solso clearly see that the solution times for the optimal solutions of the DCC formulation as significantly lower than for the CEC formulation and that often a low number of branch and bound nodes are needed.
 
 \subsection{Results Project1 and Project2}
 \begin{tabular}{rrrrrrr}
@@ -328,7 +331,7 @@ This time we also add DCC's for nodes in the branch and cut tree where we dont h
     10 &  1000 &           TL &               &           TL &            TL &              TL\\   
 \bottomrule
 \end{tabular}
-
+Here we show the efficiency of all formulations in one table. The DCC formulation had the overall lowest solution times but could not solve instance 9 with $k=500$, which is solved only by the single commodity flow formulation to optimallity.The CEC formulation aswell has very low solution times but slows down when it comes to larger instances like instance 10 with $k=400$. FOr the compact formulations the SCF solved the most instances followed by the MTZ formulation. The MCF formulation showed the worst peformance, since we could not even solve instances larger than 6 due to the vast amout of inequalities created and their required memory for the solution process.
 
 
 
